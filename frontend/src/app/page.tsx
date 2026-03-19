@@ -66,7 +66,7 @@ export default function Home() {
             QuickMP3
           </motion.div>
           <div className="hidden md:flex gap-8 items-center font-manrope tracking-tight text-sm font-medium">
-            {["Convert", "Features", "FAQ"].map((item, idx) => (
+            {["Convert", "Features", "FAQ", "Sign Up"].map((item, idx) => (
               <motion.div
                 key={item}
                 initial={{ opacity: 0, y: -10 }}
@@ -74,8 +74,8 @@ export default function Home() {
                 transition={{ delay: 0.1 * idx }}
               >
                 <Link
-                  className={`${idx === 0 ? "text-violet-400 font-semibold" : "text-zinc-400 hover:text-zinc-100"} transition-colors`}
-                  href={idx === 0 ? "/convert" : `/#${item.toLowerCase()}`}
+                  className={`${idx === 0 ? "text-violet-400 font-semibold" : idx === 3 ? "bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-zinc-100 transition-all border border-white/10" : "text-zinc-400 hover:text-zinc-100"} transition-colors`}
+                  href={idx === 0 ? "/convert" : idx === 3 ? "/signup" : `/#${item.toLowerCase()}`}
                 >
                   {item}
                 </Link>
