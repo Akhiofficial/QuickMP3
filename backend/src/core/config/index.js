@@ -10,6 +10,11 @@ const config = {
         refreshSecret: process.env.JWT_REFRESH_SECRET || 'refresh_secret_key',
         accessExpiry: process.env.ACCESS_TOKEN_EXPIRY || '15m',
         refreshExpiry: process.env.REFRESH_TOKEN_EXPIRY || '7d',
+    },
+    supabase: {
+        url: process.env.SUPABASE_URL,
+        anonKey: process.env.SUPABASE_ANON_KEY,
+        bucket: process.env.SUPABASE_BUCKET || 'ytmp3-files',
     }
 };
 
