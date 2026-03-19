@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0e0e0f;
+  --foreground: #ffffff;
+}
+
+@theme {
+  --color-on-background: #ffffff;
+  --color-surface-variant: #262627;
+  --color-surface-dim: #0e0e0f;
+  --color-on-surface-variant: #adaaab;
+  --color-on-tertiary: #400072;
+  --color-secondary: #34b5fa;
+  --color-tertiary: #c890ff;
+  --color-on-tertiary-container: #2e0055;
+  --color-outline-variant: #484849;
+  --color-on-error: #490013;
+  --color-primary-fixed: #ae8dff;
+  --color-surface-container: #1a191b;
+  --color-on-surface: #ffffff;
+  --color-on-secondary: #003047;
+  --color-secondary-dim: #17a8ec;
+  --color-secondary-fixed: #a4d8ff;
+  --color-inverse-primary: #6e3bd7;
+  --color-surface: #0e0e0f;
+  --color-error: #ff6e84;
+  --color-primary-container: #ae8dff;
+  --color-secondary-container: #006591;
+  --color-primary-fixed-dim: #a27cff;
+  --color-surface-container-high: #201f21;
+  --color-on-primary-container: #2b006e;
+  --color-surface-bright: #2c2c2d;
+  --color-surface-container-highest: #262627;
+  --color-on-primary-fixed-variant: #370086;
+  --color-secondary-fixed-dim: #81ccff;
+  --color-tertiary-fixed: #cd9bff;
+  --color-surface-tint: #ba9eff;
+  --color-outline: #767576;
+  --color-on-primary: #39008c;
+  --color-tertiary-dim: #be83fa;
+  --color-error-container: #a70138;
+  --color-on-secondary-fixed-variant: #00567c;
+  --color-on-secondary-container: #f3f8ff;
+  --color-primary-dim: #8455ef;
+  --color-error-dim: #d73357;
+  --color-primary: #ba9eff;
+  --color-surface-container-low: #131314;
+  --color-tertiary-container: #bc80f8;
+  --color-tertiary-fixed-dim: #c488ff;
+  --color-inverse-on-surface: #565556;
+  --color-on-tertiary-fixed: #270048;
+  --color-on-tertiary-fixed-variant: #53108c;
+  --color-on-error-container: #ffb2b9;
+  --color-inverse-surface: #fcf8f9;
+  --color-on-primary-fixed: #000000;
+  --color-surface-container-lowest: #000000;
+  --color-on-secondary-fixed: #003853;
+
+  --font-headline: var(--font-manrope);
+  --font-body: var(--font-inter);
+  --font-label: var(--font-inter);
+  --font-manrope: var(--font-manrope);
+
+  --radius-DEFAULT: 1rem;
+  --radius-lg: 2rem;
+  --radius-xl: 3rem;
+}
+
+@layer utilities {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  .glass-panel {
+    background: rgba(38, 38, 39, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .hero-glow {
+    background: radial-gradient(circle at 50% 50%, rgba(132, 85, 239, 0.15) 0%, rgba(52, 181, 250, 0.05) 50%, transparent 100%);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
