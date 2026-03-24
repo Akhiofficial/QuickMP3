@@ -3,295 +3,233 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { UrlInput } from "../features/conversion/components/UrlInput";
+import { Navbar } from "../components/layout/Navbar";
+import { Footer } from "../components/layout/Footer";
+import { AnimatedWaveform } from "../components/visuals/AnimatedWaveform";
 
 export default function Home() {
-  const router = useRouter();
-  const [url, setUrl] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const handleConvert = async () => {
-    if (!url) return;
-    setStatus("loading");
-
-    // Simulate API call for now since backend is placeholder
-    setTimeout(() => {
-      // Instead of idle, we redirect to the conversion flow
-      router.push("/convert");
-    }, 1500);
-  };
-
-  // Animation Variants (Simplified for TS)
+  // Animation Variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
+        staggerChildren: 0.1,
         delayChildren: 0.2
       }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0
     }
   };
-
-  const glassVariants = {
-    hidden: { opacity: 0, scale: 0.95, y: 40 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      y: 0
-    }
-  };
-
-  const [openFaq, setOpenFaq] = useState<number | null>(2);
 
   return (
     <div className="bg-surface text-on-surface font-body selection:bg-primary-dim selection:text-white min-h-screen">
-      {/* TopNavBar */}
-      <nav className="bg-zinc-950/60 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]">
-        <div className="flex justify-between items-center h-16 px-6 md:px-12 max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-xl font-bold tracking-tighter text-zinc-100 font-headline uppercase"
-          >
-            QuickMP3
-          </motion.div>
-          <div className="hidden md:flex gap-8 items-center font-manrope tracking-tight text-sm font-medium">
-            {["Convert", "Features", "FAQ", "Sign Up"].map((item, idx) => (
-              <motion.div
-                key={item}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * idx }}
-              >
-                <Link
-                  className={`${idx === 0 ? "text-violet-400 font-semibold" : idx === 3 ? "bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-zinc-100 transition-all border border-white/10" : "text-zinc-400 hover:text-zinc-100"} transition-colors`}
-                  href={idx === 0 ? "/convert" : idx === 3 ? "/signup" : `/#${item.toLowerCase()}`}
-                >
-                  {item}
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-          <div className="w-[100px] md:w-auto h-8 invisible" /> {/* Spacer for balance if needed, but removing toggle */}
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
-      <header className="relative pt-32 pb-20 overflow-hidden min-h-[850px] flex flex-col items-center justify-center">
-        {/* Glows with subtle floating animation */}
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.1, 0.2, 0.1]
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] hero-glow pointer-events-none"
-        ></motion.div>
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary-dim/10 blur-[120px] rounded-full"></div>
-        <div className="absolute bottom-0 -right-24 w-[500px] h-[500px] bg-secondary/5 blur-[120px] rounded-full"></div>
+      <header className="relative pt-40 pb-20 overflow-hidden min-h-[900px] flex flex-col items-center justify-center">
+        {/* Animated Background Blobs */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <motion.div
+            animate={{
+              x: [0, 100, 0],
+              y: [0, 50, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-dim/10 blur-[120px] rounded-full"
+          />
+          <motion.div
+            animate={{
+              x: [0, -80, 0],
+              y: [0, 100, 0],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-secondary/10 blur-[150px] rounded-full"
+          />
+          <motion.div
+            animate={{
+              scale: [1, 1.5, 1],
+              opacity: [0.05, 0.1, 0.05],
+            }}
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full hero-glow"
+          />
+        </div>
 
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="relative z-10 max-w-4xl mx-auto px-6 text-center"
+          className="relative z-10 max-w-5xl mx-auto px-6 text-center"
         >
-          <motion.span
+          <motion.div
             variants={itemVariants}
-            transition={{ duration: 0.8 }}
-            className="inline-block py-1 px-4 mb-6 rounded-full bg-surface-container-high border border-outline-variant/20 text-secondary-fixed text-xs font-semibold tracking-widest uppercase"
+            className="inline-flex items-center gap-2 py-1.5 px-4 mb-8 rounded-full bg-white/5 border border-white/10 text-primary-dim text-xs font-bold tracking-[0.2em] uppercase backdrop-blur-md"
           >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-dim opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-dim"></span>
+            </span>
             Premium Extraction Chamber
-          </motion.span>
+          </motion.div>
+
           <motion.h1
             variants={itemVariants}
-            transition={{ duration: 0.8 }}
-            className="text-5xl md:text-7xl font-headline font-extrabold tracking-tighter mb-6 leading-tight"
+            className="text-6xl md:text-8xl font-headline font-black tracking-[-0.04em] mb-8 leading-[0.9] text-white"
           >
             Refine Sound from <br />
-            <span className="bg-linear-to-r from-primary-dim to-secondary bg-clip-text text-transparent">
-              Digital Signal
-            </span>
+            <span className="text-gradient">Digital Signal</span>
           </motion.h1>
+
           <motion.p
             variants={itemVariants}
-            transition={{ duration: 0.8 }}
-            className="text-on-surface-variant text-lg md:text-xl max-w-2xl mx-auto mb-12 font-medium"
+            className="text-zinc-400 text-xl md:text-2xl max-w-2xl mx-auto mb-16 font-medium leading-relaxed"
           >
-            Convert YouTube videos to high-quality MP3 instantly. Pure audio,
-            zero noise, ultimate precision.
+            Convert YouTube videos to studio-grade MP3 instantly.
+            <span className="text-zinc-100"> Pure audio, zero noise, ultimate precision.</span>
           </motion.p>
 
-          {/* Conversion Hub */}
-          <motion.div
-            variants={glassVariants}
-            transition={{ duration: 1 }}
-            className="w-full max-w-3xl mx-auto"
-          >
-            <div className="glass-panel p-2 rounded-xl border border-outline-variant/20 flex flex-col md:flex-row gap-2 shadow-2xl overflow-hidden group focus-within:border-primary-dim/40 transition-colors">
-              <div className="grow flex items-center px-6 py-4">
-                <span className="material-symbols-outlined text-outline mr-3 group-focus-within:text-primary-dim transition-colors">
-                  link
-                </span>
-                <input
-                  className="bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-outline w-full text-lg outline-none"
-                  placeholder="Paste YouTube URL..."
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                />
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.02, filter: "brightness(1.1)" }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleConvert}
-                className="bg-linear-to-r from-primary-dim to-secondary transition-all duration-300 px-8 py-4 rounded-xl text-on-primary-container font-bold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(132,85,239,0.3)] min-w-[200px]"
+          <UrlInput />
+
+          <div className="mt-12 flex flex-wrap justify-center gap-8 text-[10px] text-zinc-500 font-bold uppercase tracking-[0.3em]">
+            {[
+              { icon: "slow_motion_video", text: "320kbps High-Fidelity" },
+              { icon: "bolt", text: "Sub-Second Processing" },
+              { icon: "enhanced_encryption", text: "Secure & Anonymous" }
+            ].map((pill, idx) => (
+              <motion.span
+                key={idx}
+                variants={itemVariants}
+                className="flex items-center gap-2 group cursor-default"
               >
-                <AnimatePresence mode="wait">
-                  {status === "loading" ? (
-                    <motion.div
-                      key="loading"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1, rotate: 360 }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "linear" }}
-                      className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full"
-                    ></motion.div>
-                  ) : (
-                    <motion.div
-                      key="idle"
-                      initial={{ opacity: 0, x: -5 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 5 }}
-                      className="flex items-center gap-2"
-                    >
-                      <span>Convert to MP3</span>
-                      <span
-                        className="material-symbols-outlined"
-                        style={{ fontVariationSettings: "'FILL' 1" }}
-                      >
-                        bolt
-                      </span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            </div>
-            <div className="mt-4 flex justify-center gap-6 text-xs text-on-surface-variant/60 font-medium uppercase tracking-widest">
-              {[
-                { icon: "check_circle", text: "320kbps Support" },
-                { icon: "check_circle", text: "No Account Needed" },
-                { icon: "check_circle", text: "Cloud Secure" }
-              ].map((pill, idx) => (
-                <motion.span
-                  key={idx}
-                  variants={itemVariants}
-                  transition={{ duration: 0.8 }}
-                  className="flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-[14px]">
-                    {pill.icon}
-                  </span>{" "}
-                  {pill.text}
-                </motion.span>
-              ))}
-            </div>
-          </motion.div>
+                <span className="material-symbols-outlined text-[16px] text-zinc-400 group-hover:text-primary-dim transition-colors">
+                  {pill.icon}
+                </span>
+                {pill.text}
+              </motion.span>
+            ))}
+          </div>
         </motion.div>
       </header>
 
-      {/* Features Section: Bento Style */}
-      <section id="features" className="py-24 max-w-7xl mx-auto px-6 md:px-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* Features Section: Modern Bento */}
+      <section id="features" className="py-32 max-w-7xl mx-auto px-6 md:px-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-20"
+        >
+          <h2 className="text-4xl md:text-5xl font-headline font-black mb-6">Engineered for Excellence</h2>
+          <p className="text-zinc-400 max-w-2xl mx-auto text-lg font-medium">Our platform leverages cutting-edge signal processing to ensure your downloads are nothing short of perfect.</p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {
               icon: "speed",
-              color: "primary-dim",
-              title: "Fast Conversion",
-              desc: "Our high-end extraction servers process your requests in milliseconds, ensuring you spend less time waiting and more time listening."
+              gradient: "from-violet-500/20 to-transparent",
+              title: "Instantaneous",
+              desc: "Proprietary caching and extraction algorithms process your requests in milliseconds."
             },
             {
               icon: "high_quality",
-              color: "secondary",
-              title: "High Quality Audio",
-              desc: "Extract crystal clear audio at up to 320kbps. We maintain the original acoustic fidelity of every source video."
+              gradient: "from-blue-500/20 to-transparent",
+              title: "Studio Quality",
+              desc: "Extract crystal clear audio at up to 320kbps with meticulous acoustic fidelity."
             },
             {
               icon: "all_inclusive",
-              color: "tertiary",
-              title: "Unlimited Downloads",
-              desc: "No daily caps or subscription gates. Convert as many tracks as your library requires without ever hitting a paywall."
+              gradient: "from-fuchsia-500/20 to-transparent",
+              title: "Pure Freedom",
+              desc: "Unlimited conversions. No caps, no registration, no compromise on your experience."
             }
           ].map((feature, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, delay: idx * 0.1 }}
-              className={`group bg-surface-container-low p-8 rounded-2xl border border-outline-variant/10 hover:border-primary-dim/30 transition-all duration-500`}
+              viewport={{ once: true }}
+              whileHover={{ y: -10, transition: { duration: 0.3 } }}
+              transition={{ duration: 0.6, delay: idx * 0.1 }}
+              className={`group relative bg-white/5 p-10 rounded-[2.5rem] border border-white/5 hover:border-white/10 transition-all duration-500 overflow-hidden`}
             >
-              <div className="w-14 h-14 bg-primary-dim/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-primary-dim text-3xl">
-                  {feature.icon}
-                </span>
+              <div className={`absolute top-0 left-0 w-full h-full bg-linear-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+              <div className="relative z-10">
+                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-8 border border-white/5 group-hover:scale-110 group-hover:border-white/10 transition-all duration-500">
+                  <span className="material-symbols-outlined text-zinc-100 text-3xl">
+                    {feature.icon}
+                  </span>
+                </div>
+                <h3 className="text-2xl font-headline font-bold mb-4 text-white">
+                  {feature.title}
+                </h3>
+                <p className="text-zinc-400 leading-relaxed font-medium">
+                  {feature.desc}
+                </p>
               </div>
-              <h3 className="text-2xl font-headline font-bold mb-4">
-                {feature.title}
-              </h3>
-              <p className="text-on-surface-variant leading-relaxed">
-                {feature.desc}
-              </p>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* How It Works: Timeline */}
-      <section className="py-24 bg-surface-container-lowest overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="flex flex-col md:flex-row gap-16 items-center">
+      {/* How It Works: The Alchemy Process */}
+      <section className="py-32 bg-black relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/10 to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+          <div className="flex flex-col md:flex-row gap-20 items-center">
             <div className="md:w-1/2">
               <motion.h2
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="text-4xl md:text-5xl font-headline font-extrabold tracking-tight mb-8"
+                className="text-5xl md:text-7xl font-headline font-black tracking-tighter mb-12 text-white"
               >
                 The Alchemy <br />
-                Process
+                <span className="text-gradient">Process</span>
               </motion.h2>
               <div className="space-y-12 relative">
-                <div className="absolute left-7 top-4 bottom-4 w-0.5 bg-linear-to-b from-primary-dim via-secondary to-tertiary opacity-20"></div>
+                <div className="absolute left-[27px] top-6 bottom-6 w-[2px] bg-white/5">
+                  <motion.div
+                    initial={{ height: 0 }}
+                    whileInView={{ height: "100%" }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                    className="w-full bg-linear-to-b from-primary-dim via-secondary to-tertiary shadow-[0_0_10px_rgba(132,85,239,0.5)]"
+                  />
+                </div>
 
                 {[
-                  { n: 1, title: "Paste URL", color: "text-primary-dim", text: "Copy the YouTube link and drop it into our refined extraction chamber." },
-                  { n: 2, title: "Convert", color: "text-secondary", text: "Our engine parses the signal and extracts the highest quality audio stream available." },
-                  { n: 3, title: "Download", color: "text-tertiary", text: "Save your new MP3 file directly to your device. Instant and seamless." }
+                  { n: 1, title: "Initialize", dot: "bg-primary-dim", text: "Drop your target URL into the extraction chamber for initial resonance scanning." },
+                  { n: 2, title: "Transmute", dot: "bg-secondary", text: "Our engine parses the digital signature and isolates the highest fidelity audio stream." },
+                  { n: 3, title: "Ready", dot: "bg-tertiary", text: "Your refined MP3 is ready instantly for high-quality listening anywhere." }
                 ].map((step, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: idx * 0.2 }}
-                    className="flex gap-8 relative z-10"
+                    transition={{ delay: idx * 0.3 }}
+                    className="flex gap-10 relative z-10 group"
                   >
-                    <div className={`w-14 h-14 shrink-0 bg-surface-container-highest border border-outline-variant/20 rounded-full flex items-center justify-center font-headline font-bold text-xl ${step.color}`}>
+                    <div className={`w-14 h-14 shrink-0 glass-panel border border-white/10 rounded-full flex items-center justify-center font-headline font-black text-xl text-white group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-500`}>
+                      <span className={`absolute -inset-1 blur-md rounded-full ${step.dot} opacity-0 group-hover:opacity-20 transition-opacity`}></span>
                       {step.n}
                     </div>
                     <div>
-                      <h4 className="text-xl font-bold mb-2">{step.title}</h4>
-                      <p className="text-on-surface-variant">
+                      <h4 className="text-2xl font-bold mb-3 text-zinc-100">{step.title}</h4>
+                      <p className="text-zinc-400 text-lg font-medium leading-relaxed">
                         {step.text}
                       </p>
                     </div>
@@ -299,63 +237,71 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            <div className="md:w-1/2 relative">
+            <div className="md:w-1/2 relative lg:pl-10">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, rotate: 5 }}
-                whileInView={{ opacity: 1, scale: 1, rotate: 3 }}
+                whileInView={{ opacity: 1, scale: 1, rotate: 2 }}
                 viewport={{ once: true }}
-                className="rounded-2xl transform-gpu overflow-hidden bg-black"
+                transition={{ duration: 1 }}
+                className="rounded-xl p-4 bg-white/5 border border-white/10 overflow-hidden backdrop-blur-3xl shadow-[0_50px_100px_-20px_rgba(0,0,0,1)]"
               >
-                <Image
-                  src="/sound-waves.webp"
-                  alt="Abstract dark visual representation of sound waves"
-                  width={800}
-                  height={400}
-                  className="w-full h-[400px] object-cover mix-blend-screen"
-                />
+                <div className="rounded-[2.2rem] overflow-hidden bg-transparent aspect-video relative group flex items-center justify-center">
+                  <AnimatedWaveform />
+                </div>
               </motion.div>
-              <div className="absolute -top-8 -right-8 w-64 h-64 bg-primary-dim/20 blur-3xl rounded-full -z-10"></div>
+              <motion.div
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.5, 0.3]
+                }}
+                transition={{ duration: 5, repeat: Infinity }}
+                className="absolute -top-10 -right-10 w-80 h-80 bg-primary-dim/20 blur-[100px] rounded-full -z-10"
+              />
             </div>
           </div>
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-24 max-w-4xl mx-auto px-6">
+      <section id="faq" className="py-32 max-w-4xl mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
-          <h2 className="text-4xl font-headline font-extrabold mb-4">
+          <h2 className="text-4xl md:text-5xl font-headline font-black mb-6">
             Common Inquiries
           </h2>
-          <p className="text-on-surface-variant">
+          <p className="text-zinc-400 text-lg font-medium">
             Everything you need to know about the extraction process.
           </p>
         </motion.div>
         <div className="space-y-4">
           {[
-            { q: "Is there a limit on file size?", a: "We support videos up to 2 hours long for optimal processing quality." },
-            { q: "What audio formats are supported?", a: "Currently we specialize in high-quality MP3 (up to 320kbps)." },
+            { q: "Is there a limit on file size?", a: "We support videos up to 2 hours long for optimal processing quality. For longer content, please reach out to our API support." },
+            { q: "What audio formats are supported?", a: "Currently we specialize in high-quality MP3 (up to 320kbps). We are working on adding FLAC and WAV support soon." },
             { q: "Is the service free to use forever?", a: "Yes, QuickMP3 is committed to providing high-quality extraction for free. We sustain our infrastructure through optimized server architecture and minimal overhead." }
           ].map((faq, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, scale: 0.98 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="glass-panel border border-outline-variant/10 rounded-2xl overflow-hidden"
+              transition={{ delay: idx * 0.1 }}
+              className="glass-panel rounded-[2rem] overflow-hidden border border-white/5 hover:border-white/10 transition-colors"
             >
               <button
                 onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                className="w-full flex justify-between items-center p-6 text-left hover:bg-white/5 transition-colors group"
+                className="w-full flex justify-between items-center p-8 text-left hover:bg-white/5 transition-all group"
               >
-                <span className="text-lg font-bold">{faq.q}</span>
-                <span className="material-symbols-outlined text-outline group-hover:text-primary-dim transition-colors">
-                  {openFaq === idx ? "remove" : "add"}
-                </span>
+                <span className="text-xl font-bold text-zinc-100 group-hover:text-white transition-colors">{faq.q}</span>
+                <motion.span
+                  animate={{ rotate: openFaq === idx ? 45 : 0 }}
+                  className="material-symbols-outlined text-zinc-500 group-hover:text-primary-dim transition-colors"
+                >
+                  add
+                </motion.span>
               </button>
               <AnimatePresence>
                 {openFaq === idx && (
@@ -363,10 +309,10 @@ export default function Home() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
                     className="overflow-hidden"
                   >
-                    <div className="px-6 pb-6 text-on-surface-variant leading-relaxed">
+                    <div className="px-8 pb-8 text-zinc-400 text-lg leading-relaxed font-medium border-t border-white/5 pt-4">
                       {faq.a}
                     </div>
                   </motion.div>
@@ -377,25 +323,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-zinc-950 w-full py-12 border-t border-white/5">
-        <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-12 max-w-7xl mx-auto gap-6">
-          <div className="font-inter text-xs uppercase tracking-widest text-zinc-500">
-            © 2024 QuickMP3. High-end extraction.
-          </div>
-          <div className="flex gap-8 font-inter text-xs uppercase tracking-widest">
-            {["Privacy", "Terms", "API", "Github"].map((item) => (
-              <a
-                key={item}
-                className="text-zinc-500 hover:text-violet-400 transition-colors opacity-80 hover:opacity-100"
-                href="#"
-              >
-                {item}
-              </a>
-            ))}
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

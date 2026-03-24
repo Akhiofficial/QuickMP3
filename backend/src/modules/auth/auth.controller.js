@@ -49,11 +49,29 @@ const login = async (req, res, next) => {
     }
 
     // Call login service
-    const tokens = await authService.loginUser({ email, password });
+    const { accessToken, refreshToken } = await authService.loginUser({ email, password });
+
+    // Set HTTP-only cookies
+    res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Enable secure in production
+        sameSite: "strict",
+        maxAge: 30 * 60 * 1000 // 30 minutes
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     res.status(200).json({
       success: true,
-      ...tokens
+      message: "Login successful",
+      accessToken,
+      refreshToken,
+      user: { email }
     });
   } catch (error) {
     next(error);
@@ -73,6 +91,10 @@ const logout = async (req, res, next) => {
         const userId = req.user.id;
         
         await authService.logoutUser(userId);
+
+        // Clear cookies
+        res.clearCookie("accessToken");
+        res.clearCookie("refreshToken");
 
         res.status(200).json({
             success: true,
