@@ -32,7 +32,7 @@ export const Navbar = () => {
         </motion.div>
         
         <div className="hidden md:flex gap-8 items-center font-manrope tracking-tight text-sm font-medium">
-          {["Convert", "Features", "FAQ", isLoggedIn ? "Logout" : "Sign Up"].map((item, idx) => (
+          {["Features", "FAQ", isLoggedIn ? "Logout" : "Sign Up"].map((item, idx) => (
             <motion.div
               key={item}
               initial={{ opacity: 0, y: -10 }}
@@ -48,8 +48,8 @@ export const Navbar = () => {
                 </button>
               ) : (
                 <Link
-                  className={`${idx === 0 ? "text-violet-400 font-semibold" : idx === 3 ? "bg-primary-dim hover:brightness-110 px-4 py-2 rounded-lg text-white transition-all shadow-[0_0_20px_rgba(132,85,239,0.3)]" : "text-zinc-400 hover:text-zinc-100"} transition-colors`}
-                  href={idx === 0 ? "/convert" : idx === 3 ? "/signup" : `/#${item.toLowerCase()}`}
+                  className={`${idx === 2 ? "bg-primary-dim hover:brightness-110 px-4 py-2 rounded-lg text-white transition-all shadow-[0_0_20px_rgba(132,85,239,0.3)]" : "text-zinc-400 hover:text-zinc-100"} transition-colors`}
+                  href={idx === 2 ? "/signup" : `/#${item.toLowerCase()}`}
                 >
                   {item}
                 </Link>

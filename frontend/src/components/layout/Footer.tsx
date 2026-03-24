@@ -27,7 +27,7 @@ export const Footer = () => {
           <div>
             <h4 className="text-white font-bold mb-6 uppercase tracking-widest text-xs">Product</h4>
             <ul className="space-y-4">
-              {["Convert", "Features", "API", "Mobile"].map(item => (
+              {["Features", "API", "Mobile"].map(item => (
                 <li key={item}>
                   <a href="#" className="text-zinc-500 hover:text-white transition-colors font-medium">{item}</a>
                 </li>
