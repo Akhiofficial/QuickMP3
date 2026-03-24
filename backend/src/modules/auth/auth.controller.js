@@ -69,7 +69,9 @@ const login = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Login successful",
-      user: { email } // You can send more user data here if needed
+      accessToken,
+      refreshToken,
+      user: { email }
     });
   } catch (error) {
     next(error);

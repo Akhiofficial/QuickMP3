@@ -4,267 +4,344 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useConvert } from "../../features/conversion/hooks/useConvert";
+import { Navbar } from "../../components/layout/Navbar";
+import { Footer } from "../../components/layout/Footer";
 
 export default function ConvertPage() {
-  const [progress, setProgress] = useState(0);
-  const [isComplete, setIsComplete] = useState(false);
+  const searchParams = useSearchParams();
+  const urlParam = searchParams.get("url");
+  
+  const {
+    url,
+    setUrl,
+    metadata,
+    status,
+    progress,
+    downloadUrl,
+    error,
+    bitrate,
+    setBitrate,
+    downloading,
+    setDownloading,
+    getMetadata,
+    startConversion,
+    reset
+  } = useConvert();
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          setIsComplete(true);
-          return 100;
-        }
-        return prev + 1;
-      });
-    }, 50);
+    if (urlParam) {
+      getMetadata(urlParam);
+    }
+  }, [urlParam]);
 
-    return () => clearInterval(timer);
-  }, []);
+  const isComplete = status === "completed";
+
+  const handleDownload = async () => {
+    if (!downloadUrl || !metadata) return;
+    
+    setDownloading(true);
+    try {
+      const response = await fetch(downloadUrl);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      const fileName = `${metadata.title.replace(/[^\w\s-]/gi, '').trim()}.mp3`;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(blobUrl);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error("Direct download failed, falling back to new tab:", err);
+      window.open(downloadUrl, "_blank");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const getExpectedSize = () => {
+    if (bitrate === "320") return "11.4 MB";
+    if (bitrate === "256") return "8.8 MB";
+    return "4.5 MB";
+  };
 
   return (
     <div className="bg-surface text-on-surface font-body selection:bg-primary-dim selection:text-white min-h-screen relative overflow-hidden">
-      {/* Background Animated Orbs */}
+      {/* Animated Background Blobs */}
       <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
-        <div className="orb w-[500px] h-[500px] bg-primary-dim/20 top-[-10%] left-[-5%] blur-[100px] rounded-full absolute animate-float"></div>
-        <div className="orb w-[600px] h-[600px] bg-secondary/15 bottom-[-10%] right-[-5%] blur-[100px] rounded-full absolute animate-float-delayed"></div>
+        <motion.div
+          animate={{
+            x: [0, 100, 0],
+            y: [0, 50, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-dim/10 blur-[120px] rounded-full"
+        />
+        <motion.div
+          animate={{
+            x: [0, -80, 0],
+            y: [0, 100, 0],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-secondary/10 blur-[150px] rounded-full"
+        />
       </div>
 
-      {/* TopNavBar */}
-      <nav className="bg-zinc-950/60 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]">
-        <div className="flex justify-between items-center h-16 px-6 md:px-12 max-w-7xl mx-auto">
-          <Link href="/" className="text-xl font-bold tracking-tighter text-zinc-100 font-headline uppercase">
-            QuickMP3
-          </Link>
-          <div className="hidden md:flex gap-8 items-center font-manrope tracking-tight text-sm font-medium">
-            {["Convert", "Features", "FAQ"].map((item, idx) => (
-              <Link
-                key={item}
-                href={idx === 0 ? "/convert" : `/#${item.toLowerCase()}`}
-                className={`${idx === 0 ? "text-violet-400 font-semibold" : "text-zinc-400 hover:text-zinc-100"} transition-colors`}
-              >
-                {item}
-              </Link>
-            ))}
-          </div>
-          <div className="w-[100px] md:w-auto h-8 invisible" />
-        </div>
-      </nav>
+      <Navbar />
 
-      <main className="pt-32 pb-24 px-6 min-h-screen flex flex-col items-center justify-center relative z-10">
-        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <main className="pt-40 pb-24 px-6 min-h-screen flex flex-col items-center justify-center relative z-10">
+        {!metadata && status === "loading_metadata" && (
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-20 h-20 border-4 border-violet-500/20 border-t-primary-dim rounded-full"
+              />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-x-0 h-full w-full bg-primary-dim/20 blur-xl rounded-full"
+              />
+            </div>
+            <p className="text-zinc-400 font-black uppercase tracking-[0.4em] text-xs animate-pulse">Analyzing Digital Signal</p>
+          </div>
+        )}
+
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-8"
+          >
+             <div className="p-10 glass-panel border border-red-500/20 rounded-[2.5rem] shadow-2xl">
+               <span className="material-symbols-outlined text-red-500 text-6xl mb-6">error</span>
+               <h3 className="text-2xl font-headline font-black text-white mb-2">Extraction Failed</h3>
+               <p className="text-red-400 font-medium">{error}</p>
+             </div>
+             <Link href="/">
+               <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-4 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest text-zinc-100 transition-all border border-white/10"
+               >
+                  Try Again
+               </motion.button>
+             </Link>
+          </motion.div>
+        )}
+
+        {metadata && (
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           
           {/* Left Column: Video Preview & Progress */}
           <motion.div 
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-7 space-y-6"
+            transition={{ duration: 0.8 }}
+            className="lg:col-span-12 xl:col-span-7 space-y-8"
           >
             {/* Video Preview Card */}
-            <div className="glass-panel p-6 rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden group">
-              <div className="relative rounded-xl overflow-hidden aspect-video mb-6 border border-white/10 shadow-lg">
+            <div className="glass-panel p-8 rounded-[2.5rem] border border-white/5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+              <div className="relative rounded-3xl overflow-hidden aspect-video mb-8 border border-white/10 shadow-2xl">
                 <Image 
-                  src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070&auto=format&fit=crop" 
-                  alt="Video Thumbnail"
+                  src={metadata.thumbnail} 
+                  alt={metadata.title}
                   fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="object-cover transition-transform duration-[2s] group-hover:scale-110"
                 />
-                <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-mono text-secondary-fixed tracking-wider font-bold">
-                  04:22
+                <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent"></div>
+                <div className="absolute bottom-5 right-5 bg-black/80 backdrop-blur-xl px-4 py-1.5 rounded-xl text-xs font-mono text-white tracking-widest font-black border border-white/10">
+                  {metadata.duration}
                 </div>
               </div>
-              <div className="space-y-3">
-                <h2 className="font-headline text-2xl md:text-3xl font-bold tracking-tight text-on-surface line-clamp-2 leading-tight">
-                  Synthetic Echoes — Late Night Session (4K)
+              <div className="space-y-4">
+                <h2 className="font-headline text-3xl md:text-4xl font-black tracking-tight text-white line-clamp-2 leading-tight">
+                  {metadata.title}
                 </h2>
-                <div className="flex items-center gap-4 text-on-surface-variant text-sm font-medium">
-                  <span className="flex items-center gap-1.5 hover:text-primary transition-colors cursor-pointer">
-                    <span className="material-symbols-outlined text-[18px]">person</span>
-                    Resonance Lab
+                <div className="flex flex-wrap items-center gap-6 text-zinc-400 text-sm font-bold uppercase tracking-widest">
+                  <span className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer">
+                    <span className="material-symbols-outlined text-[20px] text-primary-dim">person</span>
+                    {metadata.author || "Global Artist"}
                   </span>
-                  <span className="w-1.5 h-1.5 bg-outline-variant/40 rounded-full"></span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[18px]">visibility</span>
-                    1.2M Views
+                  <span className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[20px] text-secondary">visibility</span>
+                    {metadata.viewCount} Views
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Conversion State Area */}
-            <div className="bg-surface-container-lowest/50 backdrop-blur-md p-8 rounded-2xl border border-outline-variant/10 shadow-2xl">
-              <div className="flex justify-between items-end mb-6">
-                <div className="space-y-2">
-                  <p className="text-secondary font-headline text-xs font-bold tracking-widest uppercase">
-                    {isComplete ? "Process Complete" : "Process Active"}
-                  </p>
-                  <h3 className="text-xl md:text-2xl font-medium text-on-surface flex items-center gap-3">
-                    {!isComplete && <span className="w-2.5 h-2.5 bg-secondary rounded-full animate-pulse shadow-[0_0_10px_rgba(52,181,250,0.8)]"></span>}
-                    {isComplete ? "Audio Ready for Download" : "Extracting Audio Stream..."}
+            {/* Conversion Progress Area */}
+            <div className="glass-panel p-10 rounded-[2.5rem] border border-white/5 shadow-2xl">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 py-1 px-3 rounded-full bg-white/5 border border-white/10 text-secondary text-[10px] font-black tracking-[0.3em] uppercase">
+                    {status === "converting" && <span className="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse shadow-[0_0_8px_#34b5fa]"></span>}
+                    {isComplete ? "Conversion Complete" : status === "converting" ? "Transmuting Signal" : "Initial Resonance"}
+                  </div>
+                  <h3 className="text-2xl font-black text-white">
+                    {isComplete ? "High-Fidelity Audio Ready" : status === "converting" ? "Isolating Audio Stream..." : "Awaiting Transmutation"}
                   </h3>
                 </div>
-                <span className="text-4xl md:text-5xl font-headline font-extrabold text-on-surface tracking-tighter italic tabular-nums">
+                <span className="text-6xl md:text-7xl font-headline font-black text-white tracking-tighter italic tabular-nums">
                   {progress}%
                 </span>
               </div>
               
-              {/* Progress Bar Container */}
-              <div className="h-3 w-full bg-surface-container-high rounded-full overflow-hidden relative shadow-inner">
+              <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden relative border border-white/5 p-0.5">
                 <motion.div 
                   initial={{ width: "0%" }}
                   animate={{ width: `${progress}%` }}
-                  className="absolute inset-0 bg-linear-to-r from-primary-dim via-secondary to-tertiary shadow-[0_0_20px_rgba(52,181,250,0.4)]"
+                  transition={{ type: "spring", stiffness: 50, damping: 20 }}
+                  className="absolute inset-y-0.5 left-0.5 bg-linear-to-r from-primary-dim via-secondary to-tertiary rounded-full shadow-[0_0_20px_rgba(132,85,239,0.5)]"
                 >
-                  <div className="absolute right-0 top-0 bottom-0 w-12 bg-white/30 blur-md animate-shimmer"></div>
+                  <div className="absolute inset-0 animate-shimmer opacity-30"></div>
                 </motion.div>
               </div>
 
-              <div className="mt-6 flex justify-between text-sm font-medium text-on-surface-variant tracking-wide">
-                <div className="flex items-center gap-2">
-                  {!isComplete && <span className="material-symbols-outlined animate-spin text-[16px]">sync</span>}
-                  {isComplete ? "Encoding 100% Verified" : "Encoding VBR Layer"}
+              <div className="mt-8 flex justify-between text-[10px] font-black text-zinc-500 tracking-[0.3em] uppercase">
+                <div className="flex items-center gap-3">
+                  {status === "converting" && <motion.span animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="material-symbols-outlined text-[14px]">sync</motion.span>}
+                  {isComplete ? "Security & Integrity Verified" : status === "converting" ? "Processing VBR Layer" : "Quantum Wait State"}
                 </div>
-                <span>{isComplete ? "Done" : `Estimated: ${Math.ceil((100 - progress) / 10)}s`}</span>
+                <span className="text-zinc-400">{isComplete ? "Ready" : status === "converting" ? `Processing...` : "Awaiting"}</span>
               </div>
             </div>
           </motion.div>
 
           {/* Right Column: Settings & Actions */}
           <motion.div 
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-5 space-y-6"
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="lg:col-span-12 xl:col-span-5 space-y-8"
           >
-            {/* Output Parameters Card */}
-            <div className="glass-panel p-8 rounded-2xl border border-outline-variant/10 shadow-2xl">
-              <h4 className="font-headline text-xs font-bold text-on-surface-variant mb-8 tracking-widest uppercase">Output Parameters</h4>
+            {/* Parameters Card */}
+            <div className="glass-panel p-10 rounded-[2.5rem] border border-white/5 shadow-2xl">
+              <h4 className="font-headline text-[10px] font-black text-zinc-500 mb-10 tracking-[0.4em] uppercase text-center">Output Parameters</h4>
               
-              <div className="space-y-6">
+              <div className="space-y-10">
                 <div>
-                  <p className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
-                    Bitrate Selection
-                    <span className="material-symbols-outlined text-[16px] text-primary/60 cursor-help">info</span>
-                  </p>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-4">
                     {[
-                      { val: 128, label: "Standard" },
-                      { val: 256, label: "High" },
-                      { val: 320, label: "Master" }
-                    ].map((bitrate) => (
+                      { val: "128", label: "Standard" },
+                      { val: "256", label: "High Quality" },
+                      { val: "320", label: "Premium" }
+                    ].map((item) => (
                       <button 
-                        key={bitrate.val}
-                        className={`py-4 px-2 rounded-xl border transition-all duration-300 active:scale-95 group ${
-                          bitrate.val === 320 
-                          ? "border-primary-dim bg-primary-dim/10 text-primary-dim shadow-[0_0_15px_rgba(132,85,239,0.2)]" 
-                          : "border-outline-variant/20 bg-surface-container-highest text-on-surface-variant hover:border-primary-dim/40"
+                        key={item.val}
+                        disabled={status === "converting"}
+                        onClick={() => setBitrate(item.val)}
+                        className={`py-6 px-2 rounded-2xl border transition-all duration-500 active:scale-95 group disabled:opacity-50 ${
+                          bitrate === item.val
+                          ? "border-primary-dim bg-primary-dim/10 text-primary-dim shadow-[0_0_30px_rgba(132,85,239,0.2)]" 
+                          : "border-white/5 bg-white/5 text-zinc-400 hover:border-white/20 hover:text-white"
                         }`}
                       >
-                        <span className="block text-base font-bold">{bitrate.val}</span>
-                        <span className="block text-[10px] uppercase tracking-tighter opacity-60 font-bold group-hover:opacity-100 transition-opacity">
-                          {bitrate.label}
+                        <span className="block text-xl font-black mb-1 tracking-tighter">{item.val}</span>
+                        <span className="block text-[9px] uppercase tracking-widest opacity-50 font-black group-hover:opacity-100 transition-opacity">
+                          {item.label}
                         </span>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4">
-                  <div className="flex justify-between items-center text-sm py-3 border-b border-outline-variant/10">
-                    <span className="text-on-surface-variant font-medium">Expected Size</span>
-                    <span className="font-bold text-on-surface">11.4 MB</span>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center py-4 border-b border-white/5">
+                    <span className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Estimated Mass</span>
+                    <span className="font-black text-white">{getExpectedSize()}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm py-3 border-b border-outline-variant/10">
-                    <span className="text-on-surface-variant font-medium">Format</span>
-                    <span className="font-bold text-on-surface">MPEG Layer-3</span>
+                  <div className="flex justify-between items-center py-4 border-b border-white/5">
+                    <span className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Signal Format</span>
+                    <span className="font-black text-white">High Definition MP3</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm py-3">
-                    <span className="text-on-surface-variant font-medium">Sample Rate</span>
-                    <span className="font-bold text-on-surface">48 kHz</span>
+                  <div className="flex justify-between items-center py-4">
+                    <span className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Resonance</span>
+                    <span className="font-black text-white">48,000 Hz</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Actions Section */}
+            {/* Main CTA */}
             <div className="space-y-4">
+               {status === "idle" && (
+                <motion.button 
+                  whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(132,85,239,0.3)" }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={startConversion}
+                  className="w-full py-6 rounded-2xl font-headline font-black text-xl flex items-center justify-center gap-3 transition-all duration-500 bg-linear-to-r from-primary-dim to-secondary text-white shadow-2xl overflow-hidden relative group/cta"
+                >
+                  <div className="absolute inset-0 animate-shimmer opacity-0 group-hover/cta:opacity-100 transition-opacity"></div>
+                  <span className="material-symbols-outlined relative z-10" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+                  <span className="relative z-10">Start Conversion</span>
+                </motion.button>
+              )}
+
               <motion.button 
-                whileHover={{ scale: 1.01, filter: "brightness(1.1)" }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full py-5 rounded-xl font-headline font-black text-xl flex items-center justify-center gap-3 transition-all duration-500 shadow-2xl ${
+                whileHover={isComplete && !downloading ? { scale: 1.02, boxShadow: "0 0 40px rgba(52,181,250,0.4)" } : {}}
+                whileTap={isComplete && !downloading ? { scale: 0.98 } : {}}
+                onClick={handleDownload}
+                disabled={!isComplete || downloading}
+                className={`w-full py-6 rounded-2xl font-headline font-black text-xl flex items-center justify-center gap-3 transition-all duration-500 relative overflow-hidden group/dl ${
                   isComplete 
-                  ? "bg-linear-to-r from-primary-dim to-secondary text-white shadow-[0_10px_40px_-10px_rgba(132,85,239,0.5)] cursor-pointer" 
-                  : "bg-surface-container-highest text-on-surface-variant/40 cursor-not-allowed border border-white/5"
-                }`}
+                  ? "bg-linear-to-r from-secondary to-tertiary text-white shadow-2xl cursor-pointer" 
+                  : "bg-white/5 text-zinc-700 cursor-not-allowed border border-white/5"
+                } ${downloading ? "opacity-80" : ""}`}
               >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>download</span>
-                Download MP3
+                {isComplete && <div className="absolute inset-0 animate-shimmer opacity-0 group-hover/dl:opacity-100 transition-opacity"></div>}
+                {downloading ? (
+                  <>
+                    <motion.span 
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="material-symbols-outlined"
+                    >
+                      sync
+                    </motion.span>
+                    Converting File...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined relative z-10" style={{ fontVariationSettings: "'FILL' 1" }}>download_done</span>
+                    <span className="relative z-10">Download MP3</span>
+                  </>
+                )}
               </motion.button>
 
-              <Link href="/">
+              <Link href="/" className="block">
                 <motion.button 
-                  whileHover={{ scale: 1.01, backgroundColor: "rgba(255,255,255,0.05)" }}
+                  whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.08)" }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full mt-4 bg-zinc-900/50 backdrop-blur-md py-4 rounded-xl font-headline font-bold text-on-surface border border-outline-variant/20 hover:border-primary-dim/30 transition-all flex items-center justify-center gap-3"
+                  className="w-full bg-white/5 py-5 rounded-2xl font-headline font-black text-xs uppercase tracking-[0.3em] text-zinc-400 border border-white/5 hover:text-white transition-all flex items-center justify-center gap-3"
                 >
-                  <span className="material-symbols-outlined text-on-surface-variant">add_circle</span>
-                  Convert Another
+                  <span className="material-symbols-outlined">refresh</span>
+                  Analyze New Signal
                 </motion.button>
               </Link>
             </div>
 
-            {/* Info Badge */}
-            <div className="flex items-start gap-4 p-5 rounded-2xl bg-primary-dim/5 border border-primary-dim/10">
-              <span className="material-symbols-outlined text-primary-dim">verified</span>
-              <p className="text-xs text-on-surface-variant leading-relaxed font-medium">
-                Metadata and ID3 tags have been automatically extracted and applied to your MP3 file. Pure audio experience guaranteed.
+            {/* Quality Badge */}
+            <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5 flex items-start gap-4 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-24 h-24 bg-primary-dim/10 blur-2xl rounded-full"></div>
+              <span className="material-symbols-outlined text-primary-dim text-3xl">verified</span>
+              <p className="text-[10px] text-zinc-500 leading-relaxed font-black uppercase tracking-widest">
+                ID3 metadata protocols automatically applied. Highest fidelity guaranteed by QuickMP3 Studio.
               </p>
             </div>
           </motion.div>
         </div>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-zinc-950/80 backdrop-blur-lg w-full py-12 border-t border-white/5 relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-12 max-w-7xl mx-auto gap-8">
-          <div className="font-inter text-xs uppercase tracking-[0.2em] text-zinc-500 font-bold">
-            © 2024 QuickMP3. HIGH-END EXTRACTION.
-          </div>
-          <div className="flex gap-10 font-inter text-xs uppercase tracking-[0.15em] font-bold">
-            {["Privacy", "Terms", "API", "Github"].map((item) => (
-              <a
-                key={item}
-                className="text-zinc-500 hover:text-violet-400 transition-all duration-300 opacity-80 hover:opacity-100"
-                href="#"
-              >
-                {item}
-              </a>
-            ))}
-          </div>
-        </div>
-      </footer>
-
-      <style jsx global>{`
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-float {
-          animation: float 20s ease-in-out infinite;
-        }
-        .animate-float-delayed {
-          animation: float 25s ease-in-out infinite -5s;
-        }
-        @keyframes shimmer {
-          0% { transform: translateX(-150%); }
-          100% { transform: translateX(150%); }
-        }
-        .animate-shimmer {
-          animation: shimmer 2.5s infinite;
-        }
-      `}</style>
+      <Footer />
     </div>
   );
 }

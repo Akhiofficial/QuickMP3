@@ -27,13 +27,13 @@ class YtDlpService {
    * @param {string} url - YouTube video URL
    * @returns {Promise<{filePath: string, title: string}>} - The path and title
    */
-  async convertToMp3(url) {
+  async convertToMp3(url, quality = "192K") {
     try {
       // --print title: get original title
       // --print after_move:filepath: get final path
       // -o "downloads/%(id)s.%(ext)s": use ID for absolute name stability
       const { stdout } = await execPromise(
-        `yt-dlp -x --audio-format mp3 --audio-quality 192K --print title --print after_move:filepath -o "downloads/%(id)s.%(ext)s" "${url}"`
+        `yt-dlp -x --audio-format mp3 --audio-quality ${quality} --print title --print after_move:filepath -o "downloads/%(id)s.%(ext)s" "${url}"`
       );
       
       const lines = stdout.trim().split('\n');

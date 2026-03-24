@@ -65,6 +65,9 @@
   --radius-DEFAULT: 1rem;
   --radius-lg: 2rem;
   --radius-xl: 3rem;
+
+  --vibrant-gradient: linear-gradient(135deg, #8455ef 0%, #34b5fa 50%, #c890ff 100%);
+  --glow-primary: 0 0 20px rgba(132, 85, 239, 0.4);
 }
 
 @layer utilities {
@@ -73,17 +76,45 @@
   }
 
   .glass-panel {
-    background: rgba(38, 38, 39, 0.4);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(26, 25, 27, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .hero-glow {
-    background: radial-gradient(circle at 50% 50%, rgba(132, 85, 239, 0.15) 0%, rgba(52, 181, 250, 0.05) 50%, transparent 100%);
+    background: radial-gradient(circle at 50% 50%, rgba(132, 85, 239, 0.2) 0%, rgba(52, 181, 250, 0.1) 40%, transparent 70%);
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .text-gradient {
+    background: var(--vibrant-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  overflow-x: hidden;
 }

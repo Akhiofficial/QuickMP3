@@ -17,8 +17,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({
-    origin: config.corsOrigin,
-    credentials: true, // Allow cookies to be sent
+  origin: config.corsOrigin,
+  credentials: true, // Allow cookies to be sent
 }));
 
 // Routes
@@ -39,7 +39,7 @@ connectDB();
 
 // Root route
 app.get('/', (req, res) => {
-    res.json({ message: "YtMP3 API is running" });
+  res.json({ message: "YtMP3 API is running" });
 });
 
 // Error Handling
