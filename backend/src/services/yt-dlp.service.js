@@ -35,9 +35,10 @@ class YtDlpService {
    */
   async _getBaseCommand() {
     const cookiesFile = await this._prepareCookies();
-    // --extractor-args: helps with signature solving and blocked clients
-    // --no-warnings: reduces noise in stderr
-    let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config --extractor-args "youtube:player_client=ios,android,web" --user-agent "${this.userAgent}"`;
+    // --js-runtimes: explicitly use node for EJS signature solving
+    // --remote-components: allow fetching latest EJS scripts if needed
+    // --extractor-args: helps bypass bot detection by mimicking different clients
+    let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config --js-runtimes node --remote-components ejs:github --extractor-args "youtube:player_client=ios,android,web" --user-agent "${this.userAgent}"`;
     if (cookiesFile && fs.existsSync(cookiesFile)) {
       cmd += ` --cookies "${cookiesFile}"`;
     }
@@ -58,9 +59,9 @@ class YtDlpService {
     } catch (error) {
       const stderr = error.stderr || "";
       console.error("yt-dlp metadata error:", stderr || error.message);
-      
+
       let message = "Failed to fetch video metadata. Please ensure the URL is valid.";
-      
+
       // Filter out warnings to find the real error
       const actualErrorLog = stderr.split('\n').find(line => line.startsWith('ERROR:') || !line.startsWith('WARNING:')) || stderr;
 
@@ -75,7 +76,7 @@ class YtDlpService {
       } else if (actualErrorLog) {
         message = `YouTube Error: ${actualErrorLog.split('\n')[0].replace('ERROR: ', '')}`;
       }
-      
+
       throw new Error(message);
     }
   }
@@ -89,9 +90,9 @@ class YtDlpService {
     try {
       const baseCmd = await this._getBaseCommand();
       const { stdout } = await execPromise(
-        `${baseCmd} -x --audio-format mp3 --audio-quality ${quality} --print title --print after_move:filepath -o "downloads/%(id)s.%(ext)s" "${url}"`
+        `${baseCmd} -f "ba/b" -x --audio-format mp3 --audio-quality ${quality} --print title --print after_move:filepath -o "downloads/%(id)s.%(ext)s" "${url}"`
       );
-      
+
       const lines = stdout.trim().split('\n');
       const title = lines[0].trim();
       const filePath = lines[lines.length - 1].trim();
@@ -100,9 +101,9 @@ class YtDlpService {
     } catch (error) {
       const stderr = error.stderr || "";
       console.error("yt-dlp conversion error:", stderr || error.message);
-      
+
       let message = "Failed to convert video. Please ensure the URL is valid.";
-      
+
       // Filter out warnings to find the real error
       const actualErrorLog = stderr.split('\n').find(line => line.startsWith('ERROR:') || !line.startsWith('WARNING:')) || stderr;
 
@@ -115,7 +116,7 @@ class YtDlpService {
       } else if (actualErrorLog) {
         message = `YouTube Error: ${actualErrorLog.split('\n')[0].replace('ERROR: ', '')}`;
       }
-      
+
       throw new Error(message);
     }
   }
