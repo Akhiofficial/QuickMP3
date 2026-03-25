@@ -64,6 +64,9 @@ class YtDlpService {
         message = "YouTube is blocking the request. Cookies needs to be updated.";
       } else if (stderr.includes("Too Many Requests") || stderr.includes("429")) {
         message = "YouTube rate limit exceeded. Please try again later with updated cookies.";
+      } else if (stderr) {
+        // Fallback: show the first line of stderr for better debugging
+        message = `YouTube Error: ${stderr.split('\n')[0].replace('ERROR: ', '')}`;
       }
       
       throw new Error(message);
