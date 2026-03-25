@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import { useConvert } from "../../features/conversion/hooks/useConvert";
 import { Navbar } from "../../components/layout/Navbar";
 import { Footer } from "../../components/layout/Footer";
 
-export default function ConvertPage() {
+function ConvertContent() {
   const searchParams = useSearchParams();
   const urlParam = searchParams.get("url");
   
@@ -343,5 +343,13 @@ export default function ConvertPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function ConvertPage() {
+  return (
+    <Suspense fallback={null}>
+      <ConvertContent />
+    </Suspense>
   );
 }

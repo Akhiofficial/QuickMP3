@@ -4,9 +4,11 @@ const config = {
     port: process.env.PORT || 5000,
     mongoUri: process.env.MONGO_URI,
     env: process.env.NODE_ENV || 'development',
-    corsOrigin: process.env.CORS_ORIGIN
-        ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-        : ['http://localhost:3000', 'https://quick-mp-3.vercel.app'],
+    corsOrigin: [
+        'http://localhost:3000',
+        'https://quick-mp-3.vercel.app',
+        ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : [])
+    ],
     jwt: {
         accessSecret: process.env.JWT_ACCESS_SECRET || 'access_secret_key',
         refreshSecret: process.env.JWT_REFRESH_SECRET || 'refresh_secret_key',
