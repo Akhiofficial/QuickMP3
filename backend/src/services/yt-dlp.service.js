@@ -20,6 +20,7 @@ class YtDlpService {
       if (config.youtubeCookies) {
         // Only write if it doesn't exist or content is different (optional optimization)
         fs.writeFileSync(this.cookiesPath, config.youtubeCookies, "utf8");
+        console.log("YouTube cookies loaded from YOUTUBE_COOKIES environment variable.");
         return this.cookiesPath;
       }
       return null;
@@ -53,8 +54,19 @@ class YtDlpService {
       const { stdout } = await execPromise(`${baseCmd} --dump-json --no-playlist "${url}"`);
       return JSON.parse(stdout);
     } catch (error) {
-      console.error("yt-dlp metadata error:", error);
-      throw new Error("Failed to fetch video metadata. YouTube might be blocking the server or the URL is invalid. Please try again later.");
+      const stderr = error.stderr || "";
+      console.error("yt-dlp metadata error:", stderr || error.message);
+      
+      let message = "Failed to fetch video metadata. Please ensure the URL is valid.";
+      if (stderr.includes("Video unavailable")) {
+        message = "This video is unavailable or has been removed.";
+      } else if (stderr.includes("Sign in to confirm you are not a bot")) {
+        message = "YouTube is blocking the request. Cookies needs to be updated.";
+      } else if (stderr.includes("Too Many Requests") || stderr.includes("429")) {
+        message = "YouTube rate limit exceeded. Please try again later with updated cookies.";
+      }
+      
+      throw new Error(message);
     }
   }
 
@@ -76,8 +88,17 @@ class YtDlpService {
 
       return { filePath, title };
     } catch (error) {
-      console.error("yt-dlp conversion error:", error);
-      throw new Error("Failed to convert video. YouTube might be blocking the server. Please try again later.");
+      const stderr = error.stderr || "";
+      console.error("yt-dlp conversion error:", stderr || error.message);
+      
+      let message = "Failed to convert video. Please ensure the URL is valid.";
+      if (stderr.includes("Video unavailable")) {
+        message = "This video is unavailable or has been removed.";
+      } else if (stderr.includes("Sign in to confirm you are not a bot")) {
+        message = "YouTube is blocking the request. Cookies needs to be updated.";
+      }
+      
+      throw new Error(message);
     }
   }
 }
