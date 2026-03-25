@@ -19,7 +19,8 @@ const config = {
         url: process.env.SUPABASE_URL,
         anonKey: process.env.SUPABASE_ANON_KEY,
         bucket: process.env.SUPABASE_BUCKET || 'ytmp3-files',
-    }
+    },
+    youtubeCookies: process.env.YOUTUBE_COOKIES,
 };
 
 export default config;
