@@ -35,7 +35,9 @@ class YtDlpService {
    */
   async _getBaseCommand() {
     const cookiesFile = await this._prepareCookies();
-    let cmd = `yt-dlp --no-check-certificate --user-agent "${this.userAgent}"`;
+    // --extractor-args: helps with signature solving and blocked clients
+    // --no-warnings: reduces noise in stderr
+    let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config --extractor-args "youtube:player_client=ios,android,web" --user-agent "${this.userAgent}"`;
     if (cookiesFile && fs.existsSync(cookiesFile)) {
       cmd += ` --cookies "${cookiesFile}"`;
     }
@@ -58,15 +60,20 @@ class YtDlpService {
       console.error("yt-dlp metadata error:", stderr || error.message);
       
       let message = "Failed to fetch video metadata. Please ensure the URL is valid.";
-      if (stderr.includes("Video unavailable")) {
+      
+      // Filter out warnings to find the real error
+      const actualErrorLog = stderr.split('\n').find(line => line.startsWith('ERROR:') || !line.startsWith('WARNING:')) || stderr;
+
+      if (actualErrorLog.includes("Video unavailable")) {
         message = "This video is unavailable or has been removed.";
-      } else if (stderr.includes("Sign in to confirm you are not a bot")) {
-        message = "YouTube is blocking the request. Cookies needs to be updated.";
-      } else if (stderr.includes("Too Many Requests") || stderr.includes("429")) {
-        message = "YouTube rate limit exceeded. Please try again later with updated cookies.";
-      } else if (stderr) {
-        // Fallback: show the first line of stderr for better debugging
-        message = `YouTube Error: ${stderr.split('\n')[0].replace('ERROR: ', '')}`;
+      } else if (actualErrorLog.includes("Sign in to confirm you are not a bot")) {
+        message = "YouTube is blocking the request. Please update your YOUTUBE_COOKIES.";
+      } else if (actualErrorLog.includes("Too Many Requests") || actualErrorLog.includes("429")) {
+        message = "YouTube rate limit exceeded. Please try again later.";
+      } else if (actualErrorLog.includes("Signature solving failed")) {
+        message = "YouTube signature error. This often happens on servers; updated cookies might be required.";
+      } else if (actualErrorLog) {
+        message = `YouTube Error: ${actualErrorLog.split('\n')[0].replace('ERROR: ', '')}`;
       }
       
       throw new Error(message);
@@ -95,10 +102,18 @@ class YtDlpService {
       console.error("yt-dlp conversion error:", stderr || error.message);
       
       let message = "Failed to convert video. Please ensure the URL is valid.";
-      if (stderr.includes("Video unavailable")) {
+      
+      // Filter out warnings to find the real error
+      const actualErrorLog = stderr.split('\n').find(line => line.startsWith('ERROR:') || !line.startsWith('WARNING:')) || stderr;
+
+      if (actualErrorLog.includes("Video unavailable")) {
         message = "This video is unavailable or has been removed.";
-      } else if (stderr.includes("Sign in to confirm you are not a bot")) {
-        message = "YouTube is blocking the request. Cookies needs to be updated.";
+      } else if (actualErrorLog.includes("Sign in to confirm you are not a bot")) {
+        message = "YouTube is blocking the request. Please update your YOUTUBE_COOKIES.";
+      } else if (actualErrorLog.includes("Signature solving failed")) {
+        message = "YouTube signature error. This often happens on servers; updated cookies might be required.";
+      } else if (actualErrorLog) {
+        message = `YouTube Error: ${actualErrorLog.split('\n')[0].replace('ERROR: ', '')}`;
       }
       
       throw new Error(message);
