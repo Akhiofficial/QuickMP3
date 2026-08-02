@@ -17,23 +17,26 @@ class YtDlpService {
    */
   async _prepareCookies() {
     try {
-      const explicitCookiesPath = process.env.YOUTUBE_COOKIES_FILE?.trim();
-      const localCookiesPath = path.join(process.cwd(), "youtube-cookies.txt");
-
       if (config.youtubeCookies && config.youtubeCookies.trim()) {
         fs.writeFileSync(this.cookiesPath, config.youtubeCookies, "utf8");
         console.log("YouTube cookies loaded from YOUTUBE_COOKIES environment variable.");
         return this.cookiesPath;
       }
 
-      if (explicitCookiesPath && fs.existsSync(explicitCookiesPath)) {
-        console.log("YouTube cookies loaded from YOUTUBE_COOKIES_FILE.");
-        return explicitCookiesPath;
-      }
+      const explicitCookiesPath = process.env.YOUTUBE_COOKIES_FILE?.trim();
+      const candidatePaths = [
+        explicitCookiesPath,
+        path.join(process.cwd(), "youtube-cookies.txt"),
+        path.join(process.cwd(), "cookies.txt"),
+        path.join(process.cwd(), "backend", "youtube-cookies.txt"),
+        path.join(process.cwd(), "backend", "cookies.txt"),
+      ].filter(Boolean);
 
-      if (fs.existsSync(localCookiesPath)) {
-        console.log("YouTube cookies loaded from local youtube-cookies.txt.");
-        return localCookiesPath;
+      for (const candidatePath of candidatePaths) {
+        if (candidatePath && fs.existsSync(candidatePath)) {
+          console.log(`YouTube cookies loaded from ${candidatePath}.`);
+          return candidatePath;
+        }
       }
 
       return null;
