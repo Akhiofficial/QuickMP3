@@ -103,3 +103,7 @@ Thumbs.db
 downloads/
 temp/
 youtube-cookies.txt
+cookies.txt
+*.cookies
+*.cookie
+
