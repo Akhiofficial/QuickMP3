@@ -106,7 +106,7 @@ class YtDlpService {
     try {
       const baseCmd = await this._getBaseCommand();
       const { stdout } = await execPromise(
-        `${baseCmd} -f "ba/b" -x --audio-format mp3 --audio-quality ${quality} --print title --print after_move:filepath -o "downloads/%(id)s.%(ext)s" "${url}"`
+        `${baseCmd} -f "bestaudio/best" -x --audio-format mp3 --audio-quality ${quality} --print title --print after_move:filepath -o "downloads/%(id)s.%(ext)s" "${url}"`
       );
 
       const lines = stdout.trim().split('\n');
@@ -127,6 +127,8 @@ class YtDlpService {
         message = "This video is unavailable or has been removed.";
       } else if (actualErrorLog.includes("Sign in to confirm you are not a bot")) {
         message = "YouTube is blocking the request. Please update your YOUTUBE_COOKIES.";
+      } else if (actualErrorLog.includes("Requested format is not available") || actualErrorLog.includes("not available")) {
+        message = "This video currently does not expose a compatible audio format. Please try another video or try again later.";
       } else if (actualErrorLog.includes("Signature solving failed")) {
         message = "YouTube signature error. This often happens on servers; updated cookies might be required.";
       } else if (actualErrorLog) {
