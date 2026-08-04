@@ -79,15 +79,22 @@ class YtDlpService {
       extractorArgs = `youtube:player_client=web,tv_embedded;po_token=web+${poToken}`;
       useCookies = true;
       console.log("[yt-dlp] Using web client with PO token (no visitor_data).");
+    } else if (visitorData) {
+      // 🎉 MAGIC BULLET: No PO Token, but we have Visitor Data!
+      // The `android` client doesn't need a PO Token, but it DOES need Visitor Data to bypass IP bans.
+      // We must NOT use cookies here, because Web Cookies + Android Client = Instant Ban.
+      extractorArgs = `youtube:player_client=android,ios;visitor_data=${visitorData}`;
+      useCookies = false;
+      console.log("[yt-dlp] ⚠️  No PO Token, but found VISITOR_DATA. Using android client bypass (ignoring cookies).");
     } else if (cookiesFile && fs.existsSync(cookiesFile)) {
-      // Has Cookies but NO PO Token -> Use web client and hope cookies are enough!
+      // Has Cookies but NO PO Token and NO Visitor Data -> Use web client and hope cookies are enough!
       extractorArgs = `youtube:player_client=web,tv_embedded`;
       useCookies = true;
-      console.log("[yt-dlp] ⚠️  No PO token, but Cookies found. Using web client with cookies as a bypass.");
+      console.log("[yt-dlp] ⚠️  No PO token/Visitor Data, but Cookies found. Using web client with cookies as a bypass.");
     } else {
-      // No PO token AND No Cookies — fall back to ios/android
+      // No PO token AND No Cookies AND No Visitor Data
       extractorArgs = `youtube:player_client=ios,android,tv_embedded`;
-      console.warn("[yt-dlp] ⚠️  No PO token AND No Cookies found. Using ios/android fallback clients.");
+      console.warn("[yt-dlp] ⚠️  No auth data found. Using ios/android fallback clients.");
     }
 
     let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config `
