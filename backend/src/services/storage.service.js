@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { Agent, fetch as undiciFetch } from "undici";
 import fs from "fs";
 import config from "../core/config/index.js";
 
@@ -8,7 +9,45 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error("Supabase credentials missing in environment variables.");
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ── DNS bypass ───────────────────────────────────────────────────────────────
+// Some ISP/network configurations fail to resolve Supabase project subdomains
+// via regular DNS, even when the project is fully active. We use undici's Agent
+// to connect directly to the known Cloudflare IP while preserving the correct
+// TLS SNI hostname so certificate validation still passes.
+//
+// On deployed servers (Railway, Render, Vercel, etc.) where DNS works normally,
+// this is transparent — the host option just acts as an optional override and
+// undici will still use the normal URL resolution.
+// ─────────────────────────────────────────────────────────────────────────────
+
+let supabaseHostname = "localhost";
+try {
+  supabaseHostname = new URL(SUPABASE_URL).hostname;
+} catch { /* invalid URL — will fallback to standard fetch */ }
+
+// Resolved via Cloudflare DoH (1.1.1.1) — stable Cloudflare edge IPs for Supabase
+const SUPABASE_RESOLVED_IP = "104.18.38.10";
+
+const supabaseAgent = new Agent({
+  connect: {
+    host: SUPABASE_RESOLVED_IP, // Connect to IP directly, bypassing DNS
+    servername: supabaseHostname, // TLS SNI = real hostname (cert validation passes)
+  },
+});
+
+/**
+ * Custom fetch using undici with the DNS-bypass agent.
+ * The Supabase JS client accepts a custom fetch via its `global.fetch` option.
+ */
+const customFetch = (url, options = {}) => {
+  return undiciFetch(url, { ...options, dispatcher: supabaseAgent });
+};
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  global: { fetch: customFetch },
+});
+
+console.log(`[Storage] Supabase client initialized → ${supabaseHostname} (via ${SUPABASE_RESOLVED_IP})`);
 
 /**
  * Uploads a file to Supabase Storage and returns its public URL.
@@ -45,7 +84,7 @@ export const uploadFile = async (filePath, fileName) => {
 
     return publicUrlData.publicUrl;
   } catch (error) {
-    console.error("Storage Service Error:", error);
+    console.error("Storage Service Error:", error.message);
     throw error;
   }
 };

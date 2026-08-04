@@ -43,7 +43,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col bg-surface-dim text-on-surface font-body selection:bg-primary-dim selection:text-white">
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-surface-dim text-on-surface font-body selection:bg-primary-dim selection:text-white">
         {children}
       </body>
     </html>

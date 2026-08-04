@@ -81,7 +81,6 @@ class ConversionService {
       jobStore.updateJob(jobId, { progress: 60 });
 
       // 2. Generate unique filename for storage
-      // Format: userId_timestamp.mp3
       const fileName = `${userId}_${Date.now()}.mp3`;
 
       // 3. Upload to Supabase Storage
@@ -119,7 +118,6 @@ class ConversionService {
     const job = jobStore.getJob(jobId);
     if (!job) return null;
 
-    // Return only relevant info
     const { status, progress, error } = job;
     return { status, progress, error };
   }

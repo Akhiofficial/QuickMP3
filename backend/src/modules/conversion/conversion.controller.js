@@ -8,7 +8,6 @@ const getMetadata = async (req, res, next) => {
   try {
     const { url } = req.body;
 
-    // Validate if URL exists in request
     if (!url) {
       return res.status(400).json({
         success: false,
@@ -16,7 +15,6 @@ const getMetadata = async (req, res, next) => {
       });
     }
 
-    // Call service to get formatted metadata
     const data = await conversionService.getMetadata(url);
 
     res.status(200).json({
@@ -24,7 +22,6 @@ const getMetadata = async (req, res, next) => {
       data,
     });
   } catch (error) {
-    // Controller will send status 500 if error thrown from service
     res.status(500).json({
       success: false,
       message: error.message || "Something went wrong while fetching metadata",
@@ -47,8 +44,6 @@ const convertVideo = async (req, res) => {
       });
     }
 
-    // Initiate job-based conversion
-    // req.user?.id from authMiddleware if present, else 'anonymous'
     const jobId = conversionService.initiateConversion(url, req.user?.id || "anonymous");
 
     res.status(202).json({
@@ -95,7 +90,6 @@ const getStatus = async (req, res) => {
 
 /**
  * Get the public URL for the converted file.
- * Replace res.download() with JSON response containing the public URL.
  * GET /api/conversion/download/:jobId
  */
 const downloadFile = async (req, res) => {
@@ -112,13 +106,10 @@ const downloadFile = async (req, res) => {
 
     const { url, title } = job;
 
-    // The file is already on Supabase and local file is already deleted in service
-    // We just return the URL to the frontend
-
     // Finalize job (remove from in-memory store)
     conversionService.finalizeJob(jobId);
 
-    // Return JSON with the public URL
+    // Return JSON with the public Supabase URL
     res.status(200).json({
       success: true,
       url,
