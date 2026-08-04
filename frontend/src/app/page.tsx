@@ -7,6 +7,7 @@ import { UrlInput } from "../features/conversion/components/UrlInput";
 import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
 import { AnimatedWaveform } from "../components/visuals/AnimatedWaveform";
+import Link from "next/link";
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);

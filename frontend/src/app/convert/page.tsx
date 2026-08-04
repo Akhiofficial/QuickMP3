@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { PremiumModal } from "../../components/ui/PremiumModal";
 import toast from "react-hot-toast";
 
-export default function ConvertPage() {
+function ConvertContent() {
   const searchParams = useSearchParams();
   const urlParam = searchParams.get("url");
   const router = useRouter();
@@ -386,5 +386,23 @@ export default function ConvertPage() {
       <PremiumModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
       <Footer />
     </div>
+  );
+}
+
+export default function ConvertPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="bg-surface text-white min-h-screen flex items-center justify-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-12 h-12 border-4 border-primary-dim/20 border-t-primary-dim rounded-full"
+          />
+        </div>
+      }
+    >
+      <ConvertContent />
+    </Suspense>
   );
 }
