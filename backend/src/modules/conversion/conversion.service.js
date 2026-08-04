@@ -76,21 +76,25 @@ class ConversionService {
 
       // 1. Convert to MP3
       const quality = `${bitrate}K`;
-      const { filePath, title } = await ytDlpService.convertToMp3(url, quality);
+      const { filePath, title, directLink } = await ytDlpService.convertToMp3(url, quality);
       
       jobStore.updateJob(jobId, { progress: 60 });
 
-      // 2. Generate unique filename for storage
-      const fileName = `${userId}_${Date.now()}.mp3`;
+      let publicUrl = directLink;
 
-      // 3. Upload to Supabase Storage
-      const publicUrl = await storageService.uploadFile(filePath, fileName);
+      if (!publicUrl) {
+        // Fallback: Generate unique filename for storage
+        const fileName = `${userId}_${Date.now()}.mp3`;
 
-      jobStore.updateJob(jobId, { progress: 90 });
+        // Upload to Supabase Storage
+        publicUrl = await storageService.uploadFile(filePath, fileName);
 
-      // 4. Delete local file
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+        jobStore.updateJob(jobId, { progress: 90 });
+
+        // Delete local file
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       }
 
       // Update job as completed
@@ -98,7 +102,7 @@ class ConversionService {
         status: "completed",
         progress: 100,
         url: publicUrl,
-        title,
+        title
       });
     } catch (error) {
       console.error(`Job ${jobId} failed:`, error);

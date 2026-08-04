@@ -73,32 +73,8 @@ class YtDlpService {
          throw new Error(data.msg || "API returned an invalid response.");
       }
 
-      console.log(`[RapidAPI] Link acquired! Downloading MP3...`);
-
-      const title = data.title || videoId;
-      const downloadDir = path.resolve(process.cwd(), "downloads");
-      if (!fs.existsSync(downloadDir)) {
-        fs.mkdirSync(downloadDir, { recursive: true });
-      }
-      
-      const filePath = path.join(downloadDir, `${videoId}.mp3`);
-
-      // Download the MP3 file from the provided link using fetch
-      const fileRes = await fetch(data.link, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-      });
-      
-      if (!fileRes.ok) {
-        throw new Error(`Failed to download MP3. Status Code: ${fileRes.status}`);
-      }
-      
-      const buffer = await fileRes.arrayBuffer();
-      fs.writeFileSync(filePath, Buffer.from(buffer));
-
-      console.log(`[RapidAPI] Download complete: ${filePath}`);
-      return { filePath, title };
+      console.log(`[RapidAPI] Link acquired! Bypassing backend download and sending direct link to frontend...`);
+      return { filePath: "", title: data.title || videoId, directLink: data.link };
     } catch (error) {
       console.error("RapidAPI conversion error:", error);
       throw new Error(`YouTube Error: ${error.message}`);
