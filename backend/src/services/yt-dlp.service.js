@@ -48,18 +48,27 @@ class YtDlpService {
 
   /**
    * Build base command with bypass flags.
+   * Uses mweb player_client which is the most reliable for server/datacenter IPs.
    */
   async _getBaseCommand() {
     const cookiesFile = await this._prepareCookies();
-    // --js-runtimes: explicitly use node for EJS signature solving
-    // --remote-components: allow fetching latest EJS scripts if needed
-    // --extractor-args: helps bypass bot detection by mimicking different clients
-    let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config --js-runtimes node --remote-components ejs:github --extractor-args "youtube:player_client=ios,android,web" --user-agent "${this.userAgent}"`;
+
+    // mweb is the most reliable client for server IPs — avoids bot detection
+    // better than ios/android/web on datacenter environments.
+    // --no-check-certificate: avoids SSL issues on some server setups
+    // --sleep-requests 1: adds a small delay to appear more human-like
+    let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config `
+      + `--extractor-args "youtube:player_client=mweb,ios" `
+      + `--user-agent "${this.userAgent}" `
+      + `--add-headers "Accept-Language:en-US,en;q=0.9" `
+      + `--sleep-requests 1`;
+
     if (cookiesFile && fs.existsSync(cookiesFile)) {
       cmd += ` --cookies "${cookiesFile}"`;
     }
     return cmd;
   }
+
 
   /**
    * Fetches the video metadata using yt-dlp.
