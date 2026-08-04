@@ -99,6 +99,10 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Project-specific
+# Project-specific: local downloaded mp3 temp files only
 downloads/
 temp/
+
+# Exception: the downloads module (src code) should be tracked
+!src/modules/downloads/
+!src/modules/downloads/**
