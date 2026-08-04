@@ -21,8 +21,9 @@ class YtDlpService {
       const { Innertube } = await import('youtubei.js');
       const yt = await Innertube.create();
       
-      // Extract Video ID from URL
-      const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
+      // Extract Video ID from URL (handle URI encoded strings)
+      const decodedUrl = decodeURIComponent(url);
+      const videoIdMatch = decodedUrl.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
       if (!videoIdMatch) throw new Error("Invalid YouTube URL");
       const videoId = videoIdMatch[1];
 
@@ -48,7 +49,8 @@ class YtDlpService {
    */
   async convertToMp3(url, quality = "320") {
     try {
-      const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
+      const decodedUrl = decodeURIComponent(url);
+      const videoIdMatch = decodedUrl.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
       if (!videoIdMatch) throw new Error("Invalid YouTube URL");
       const videoId = videoIdMatch[1];
 
@@ -81,25 +83,19 @@ class YtDlpService {
       
       const filePath = path.join(downloadDir, `${videoId}.mp3`);
 
-      // Download the MP3 file from the provided link
-      await new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(filePath);
-        const protocol = data.link.startsWith("https") ? https : http;
-        
-        protocol.get(data.link, (response) => {
-          if (response.statusCode !== 200) {
-            reject(new Error(`Failed to download MP3. Status Code: ${response.statusCode}`));
-            return;
-          }
-          response.pipe(file);
-          file.on("finish", () => {
-            file.close(resolve);
-          });
-        }).on("error", (err) => {
-          fs.unlink(filePath, () => {});
-          reject(err);
-        });
+      // Download the MP3 file from the provided link using fetch
+      const fileRes = await fetch(data.link, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
       });
+      
+      if (!fileRes.ok) {
+        throw new Error(`Failed to download MP3. Status Code: ${fileRes.status}`);
+      }
+      
+      const buffer = await fileRes.arrayBuffer();
+      fs.writeFileSync(filePath, Buffer.from(buffer));
 
       console.log(`[RapidAPI] Download complete: ${filePath}`);
       return { filePath, title };
