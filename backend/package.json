@@ -25,6 +25,7 @@
     "mongodb": "^7.1.0",
     "mongoose": "^9.3.1",
     "nodemailer": "^9.0.4",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "razorpay": "^2.9.8"
   }
 }

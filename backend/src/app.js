@@ -6,6 +6,8 @@ import config from "./core/config/index.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import conversionRoutes from "./modules/conversion/conversion.routes.js";
 import downloadRoutes from "./modules/downloads/downloads.routes.js";
+import paymentRoutes from "./modules/payments/payment.routes.js";
+import adminRoutes from "./modules/admin/admin.routes.js";
 import errorMiddleware from "./core/middlewares/error.middleware.js";
 import authMiddleware from "./core/middlewares/auth.middleware.js";
 import { globalLimiter } from "./core/middlewares/rateLimit.middleware.js";
@@ -26,6 +28,8 @@ app.use(cors({
 app.use("/api/auth", authRoutes);
 app.use("/api/conversion", conversionRoutes);
 app.use("/api/downloads", downloadRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Protected test route
 app.get("/api/protected", authMiddleware, (req, res) => {
