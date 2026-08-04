@@ -8,10 +8,17 @@ import { useSearchParams } from "next/navigation";
 import { useConvert } from "../../features/conversion/hooks/useConvert";
 import { Navbar } from "../../components/layout/Navbar";
 import { Footer } from "../../components/layout/Footer";
+import { useAuth } from "../../contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { PremiumModal } from "../../components/ui/PremiumModal";
+import toast from "react-hot-toast";
 
 export default function ConvertPage() {
   const searchParams = useSearchParams();
   const urlParam = searchParams.get("url");
+  const router = useRouter();
+  const { isAuthenticated, user, refreshUser } = useAuth();
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   
   const {
     url,
@@ -31,12 +38,38 @@ export default function ConvertPage() {
   } = useConvert();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      toast.error("Please login to access conversion chamber");
+      router.push("/login");
+      return;
+    }
     if (urlParam) {
       getMetadata(urlParam);
     }
-  }, [urlParam]);
+  }, [urlParam, isAuthenticated]);
 
   const isComplete = status === "completed";
+
+  const handleStartConversion = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to convert");
+      router.push("/login");
+      return;
+    }
+
+    if (user && user.plan === "free" && user.downloadsRemaining <= 0) {
+      setIsPremiumModalOpen(true);
+      return;
+    }
+
+    try {
+      await startConversion();
+    } catch (err: any) {
+      if (err.message?.includes("Quota exceeded") || err.message?.includes("downloads")) {
+        setIsPremiumModalOpen(true);
+      }
+    }
+  };
 
   const handleDownload = async () => {
     if (!downloadUrl || !metadata) return;
@@ -54,9 +87,18 @@ export default function ConvertPage() {
       a.click();
       window.URL.revokeObjectURL(blobUrl);
       document.body.removeChild(a);
+      
+      // Refresh user downloads count in auth context
+      setTimeout(() => {
+        refreshUser();
+      }, 1500);
     } catch (err) {
       console.error("Direct download failed, falling back to new tab:", err);
       window.open(downloadUrl, "_blank");
+      
+      setTimeout(() => {
+        refreshUser();
+      }, 1500);
     } finally {
       setDownloading(false);
     }
@@ -276,7 +318,7 @@ export default function ConvertPage() {
                 <motion.button 
                   whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(132,85,239,0.3)" }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={startConversion}
+                  onClick={handleStartConversion}
                   className="w-full py-6 rounded-2xl font-headline font-black text-xl flex items-center justify-center gap-3 transition-all duration-500 bg-linear-to-r from-primary-dim to-secondary text-white shadow-2xl overflow-hidden relative group/cta"
                 >
                   <div className="absolute inset-0 animate-shimmer opacity-0 group-hover/cta:opacity-100 transition-opacity"></div>
@@ -341,6 +383,7 @@ export default function ConvertPage() {
         )}
       </main>
 
+      <PremiumModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
       <Footer />
     </div>
   );

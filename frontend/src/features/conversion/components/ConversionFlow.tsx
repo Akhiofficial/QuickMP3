@@ -2,9 +2,17 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useConvert } from "../hooks/useConvert";
+import { useAuth } from "../../../contexts/AuthContext";
+import { PremiumModal } from "../../../components/ui/PremiumModal";
+import toast from "react-hot-toast";
 
 export const ConversionFlow = () => {
+  const router = useRouter();
+  const { isAuthenticated, user, refreshUser } = useAuth();
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
+
   const {
     url,
     setUrl,
@@ -18,14 +26,54 @@ export const ConversionFlow = () => {
     reset
   } = useConvert();
 
-  const handleFetchMetadata = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFetchMetadata = (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!url) return;
+    
+    if (!isAuthenticated) {
+      toast.error("Please login to convert videos");
+      router.push("/login");
+      return;
+    }
+
     getMetadata(url);
+  };
+
+  const handleStartConversion = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to convert videos");
+      router.push("/login");
+      return;
+    }
+
+    if (user && user.plan === "free" && user.downloadsRemaining <= 0) {
+      setIsPremiumModalOpen(true);
+      return;
+    }
+
+    try {
+      await startConversion();
+    } catch (err: any) {
+      if (err.message?.includes("Quota exceeded") || err.message?.includes("downloads")) {
+        setIsPremiumModalOpen(true);
+      }
+    }
+  };
+
+  const handleDownloadClick = () => {
+    // Refresh user quota in context on download action
+    setTimeout(() => {
+      refreshUser();
+    }, 1500);
   };
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-8">
+      <PremiumModal 
+        isOpen={isPremiumModalOpen} 
+        onClose={() => setIsPremiumModalOpen(false)} 
+      />
+
       {/* Input Section */}
       <div className="glass-panel p-2 rounded-xl border border-outline-variant/20 flex flex-col md:flex-row gap-2 shadow-2xl overflow-hidden group focus-within:border-primary-dim/40 transition-colors">
         <form onSubmit={handleFetchMetadata} className="grow flex items-center px-6 py-4">
@@ -43,7 +91,7 @@ export const ConversionFlow = () => {
         <motion.button
           whileHover={{ scale: 1.02, filter: "brightness(1.1)" }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => getMetadata(url)}
+          onClick={() => handleFetchMetadata()}
           disabled={status === "loading_metadata" || status === "converting"}
           className="bg-linear-to-r from-primary-dim to-secondary transition-all duration-300 px-8 py-4 rounded-xl text-on-primary-container font-bold text-lg flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(132,85,239,0.3)] min-w-[200px] disabled:opacity-50"
         >
@@ -108,7 +156,7 @@ export const ConversionFlow = () => {
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={startConversion}
+                      onClick={handleStartConversion}
                       className="w-full bg-linear-to-r from-violet-600 to-indigo-600 py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2"
                     >
                       <span>Convert to MP3</span>
@@ -142,6 +190,7 @@ export const ConversionFlow = () => {
                         href={downloadUrl || "#"}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={handleDownloadClick}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="w-full bg-linear-to-r from-green-600 to-emerald-600 py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2"
