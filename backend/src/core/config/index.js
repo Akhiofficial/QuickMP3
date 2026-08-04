@@ -15,7 +15,11 @@ const config = {
         url: process.env.SUPABASE_URL,
         anonKey: process.env.SUPABASE_ANON_KEY,
         bucket: process.env.SUPABASE_BUCKET || 'ytmp3-files',
-    }
+    },
+    rapidapi: {
+        key: process.env.RAPIDAPI_KEY,
+        host: process.env.RAPIDAPI_HOST || 'youtube-mp36.p.rapidapi.com',
+    },
 };
 
 export default config;
