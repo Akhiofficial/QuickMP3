@@ -58,16 +58,31 @@ class YtDlpService {
 
   /**
    * Build base command with bypass flags.
-   * tv_embedded bypasses bot detection best on server/datacenter IPs because
-   * YouTube treats it as a trusted first-party embedded player request.
+   * Uses PO token (Proof of Origin) when available — required for server IPs in 2025.
+   * Falls back to tv_embedded client without PO token.
    */
   async _getBaseCommand() {
     const cookiesFile = await this._prepareCookies();
+    const poToken = config.youtubePOToken?.trim();
+    const visitorData = config.youtubeVisitorData?.trim();
 
-    // tv_embedded → ios → mweb: ordered from best to worst for server IPs
-    // tv_embedded is a "trusted" YouTube embed client — least bot-flagged
+    // Build extractor args based on available tokens
+    let extractorArgs;
+    if (poToken && visitorData) {
+      // Full auth: web client + PO token + visitor data (most reliable on server IPs)
+      extractorArgs = `youtube:player_client=web,tv_embedded;po_token=web+${poToken};visitor_data=${visitorData}`;
+      console.log("[yt-dlp] Using web client with PO token + visitor data.");
+    } else if (poToken) {
+      extractorArgs = `youtube:player_client=web,tv_embedded;po_token=web+${poToken}`;
+      console.log("[yt-dlp] Using web client with PO token (no visitor_data).");
+    } else {
+      // No PO token — fall back to tv_embedded which needs no PO token
+      extractorArgs = `youtube:player_client=tv_embedded,ios,mweb`;
+      console.warn("[yt-dlp] ⚠️  No PO token — using tv_embedded fallback. Set YOUTUBE_PO_TOKEN for better reliability.");
+    }
+
     let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config `
-      + `--extractor-args "youtube:player_client=tv_embedded,ios,mweb" `
+      + `--extractor-args "${extractorArgs}" `
       + `--user-agent "${this.userAgent}" `
       + `--add-headers "Accept-Language:en-US,en;q=0.9"`;
 
@@ -75,7 +90,7 @@ class YtDlpService {
       cmd += ` --cookies "${cookiesFile}"`;
       console.log("[yt-dlp] Using cookies for request.");
     } else {
-      console.warn("[yt-dlp] No cookies — relying on tv_embedded client bypass only.");
+      console.warn("[yt-dlp] No cookies — relying on client bypass only.");
     }
 
     return cmd;

@@ -21,6 +21,8 @@ const config = {
         bucket: process.env.SUPABASE_BUCKET || 'ytmp3-files',
     },
     youtubeCookies: process.env.YOUTUBE_COOKIES,
+    youtubePOToken: process.env.YOUTUBE_PO_TOKEN,
+    youtubeVisitorData: process.env.YOUTUBE_VISITOR_DATA,
 };
 
 export default config;
