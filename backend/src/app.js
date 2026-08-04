@@ -5,6 +5,7 @@ import { connectDB } from "./core/db/mongo.js";
 import config from "./core/config/index.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import conversionRoutes from "./modules/conversion/conversion.routes.js";
+import downloadRoutes from "./modules/downloads/downloads.routes.js";
 import errorMiddleware from "./core/middlewares/error.middleware.js";
 import authMiddleware from "./core/middlewares/auth.middleware.js";
 import { globalLimiter } from "./core/middlewares/rateLimit.middleware.js";
@@ -24,6 +25,7 @@ app.use(cors({
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/conversion", conversionRoutes);
+app.use("/api/downloads", downloadRoutes);
 
 // Protected test route
 app.get("/api/protected", authMiddleware, (req, res) => {

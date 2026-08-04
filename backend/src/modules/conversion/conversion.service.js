@@ -37,7 +37,7 @@ class ConversionService {
     const jobId = crypto.randomUUID();
 
     // Create initial job in store
-    jobStore.createJob(jobId, { status: 'pending', progress: 0, userId });
+    jobStore.createJob(jobId, { status: 'pending', progress: 0, userId, sourceUrl: url, bitrate });
 
     // Start background process (don't await)
     this._processConversion(jobId, url, userId, bitrate);
@@ -63,6 +63,13 @@ class ConversionService {
 
       const { mp3Url, title } = await rapidapiService.convertToMp3(url);
 
+      // Also fetch thumbnail for history storage
+      let thumbnail = null;
+      try {
+        const meta = await rapidapiService.getVideoMetadata(url);
+        thumbnail = meta.thumbnail || null;
+      } catch (_) { /* non-critical */ }
+
       jobStore.updateJob(jobId, { progress: 90 });
 
       // Step 2: Return the direct CDN mp3 URL — no upload needed
@@ -71,6 +78,7 @@ class ConversionService {
         progress: 100,
         url: mp3Url,
         title,
+        thumbnail,
       });
 
       console.log(`[Job ${jobId}] Completed: ${title}`);
