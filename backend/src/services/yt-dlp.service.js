@@ -17,11 +17,19 @@ class YtDlpService {
    */
   async _prepareCookies() {
     try {
-      if (config.youtubeCookies && config.youtubeCookies.trim()) {
-        fs.writeFileSync(this.cookiesPath, config.youtubeCookies, "utf8");
-        console.log("YouTube cookies loaded from YOUTUBE_COOKIES environment variable.");
+      const rawCookies = config.youtubeCookies;
+
+      if (rawCookies && rawCookies.trim()) {
+        // Validate it looks like a Netscape cookie file
+        const trimmed = rawCookies.trim();
+        console.log(`[yt-dlp] YOUTUBE_COOKIES env var found (${trimmed.length} chars). First line: "${trimmed.split('\n')[0]}"`);
+
+        fs.writeFileSync(this.cookiesPath, trimmed, "utf8");
+        console.log(`[yt-dlp] Cookies written to: ${this.cookiesPath}`);
         return this.cookiesPath;
       }
+
+      console.warn("[yt-dlp] ⚠️  YOUTUBE_COOKIES env var is NOT set or empty — bot detection likely on server IPs.");
 
       const explicitCookiesPath = process.env.YOUTUBE_COOKIES_FILE?.trim();
       const candidatePaths = [
@@ -34,40 +42,45 @@ class YtDlpService {
 
       for (const candidatePath of candidatePaths) {
         if (candidatePath && fs.existsSync(candidatePath)) {
-          console.log(`YouTube cookies loaded from ${candidatePath}.`);
+          console.log(`[yt-dlp] Cookies loaded from file: ${candidatePath}`);
           return candidatePath;
         }
       }
 
+      console.warn("[yt-dlp] No cookies found from any source.");
       return null;
     } catch (error) {
-      console.error("Error preparing cookies:", error);
+      console.error("[yt-dlp] Error preparing cookies:", error);
       return null;
     }
   }
 
+
   /**
    * Build base command with bypass flags.
-   * Uses mweb player_client which is the most reliable for server/datacenter IPs.
+   * tv_embedded bypasses bot detection best on server/datacenter IPs because
+   * YouTube treats it as a trusted first-party embedded player request.
    */
   async _getBaseCommand() {
     const cookiesFile = await this._prepareCookies();
 
-    // mweb is the most reliable client for server IPs — avoids bot detection
-    // better than ios/android/web on datacenter environments.
-    // --no-check-certificate: avoids SSL issues on some server setups
-    // --sleep-requests 1: adds a small delay to appear more human-like
+    // tv_embedded → ios → mweb: ordered from best to worst for server IPs
+    // tv_embedded is a "trusted" YouTube embed client — least bot-flagged
     let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config `
-      + `--extractor-args "youtube:player_client=mweb,ios" `
+      + `--extractor-args "youtube:player_client=tv_embedded,ios,mweb" `
       + `--user-agent "${this.userAgent}" `
-      + `--add-headers "Accept-Language:en-US,en;q=0.9" `
-      + `--sleep-requests 1`;
+      + `--add-headers "Accept-Language:en-US,en;q=0.9"`;
 
     if (cookiesFile && fs.existsSync(cookiesFile)) {
       cmd += ` --cookies "${cookiesFile}"`;
+      console.log("[yt-dlp] Using cookies for request.");
+    } else {
+      console.warn("[yt-dlp] No cookies — relying on tv_embedded client bypass only.");
     }
+
     return cmd;
   }
+
 
 
   /**
