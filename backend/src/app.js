@@ -37,6 +37,10 @@ app.get("/api/protected", authMiddleware, (req, res) => {
     success: true,
     message: "Access granted",
     user: req.user,
+    razorpayConfig: {
+      keyId: config.razorpay.keyId ? "present" : "missing",
+      hasSecret: !!config.razorpay.keySecret,
+    }
   });
 });
 
@@ -51,4 +55,4 @@ app.get('/', (req, res) => {
 // Error Handling
 app.use(errorMiddleware);
 
-export default app; // trigger reload
+export default app; // trigger reload final
