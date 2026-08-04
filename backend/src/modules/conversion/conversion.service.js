@@ -15,7 +15,7 @@ class ConversionService {
       const metadata = await ytDlpService.getVideoMetadata(url);
 
       // Extract and format fields
-      const { title, thumbnail, duration, view_count, uploader, channel } = metadata;
+      const { title, thumbnail, duration, view_count, uploader, channel, filesize } = metadata;
 
       // Format duration from seconds to MM:SS
       const minutes = Math.floor(duration / 60);
@@ -25,11 +25,11 @@ class ConversionService {
       // Format view count (e.g., 1200000 -> 1.2M)
       let formattedViews = view_count;
       if (view_count >= 1000000) {
-        formattedViews = (view_count / 1000000).toFixed(1) + "M Views";
+        formattedViews = (view_count / 1000000).toFixed(1) + "M";
       } else if (view_count >= 1000) {
-        formattedViews = (view_count / 1000).toFixed(1) + "K Views";
+        formattedViews = (view_count / 1000).toFixed(1) + "K";
       } else {
-        formattedViews = (view_count || 0) + " Views";
+        formattedViews = (view_count || 0).toString();
       }
 
       return {
@@ -38,6 +38,7 @@ class ConversionService {
         duration: formattedDuration,
         viewCount: formattedViews,
         author: uploader || channel,
+        filesize: filesize || 0,
       };
     } catch (error) {
       throw error;
