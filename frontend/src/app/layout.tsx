@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Manrope, Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "../contexts/AuthContext";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,7 +46,20 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-surface-dim text-on-surface font-body selection:bg-primary-dim selection:text-white">
-        {children}
+        <AuthProvider>
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#1a191b",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "1rem",
+              },
+            }}
+          />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
