@@ -25,6 +25,7 @@
     "mongodb": "^7.1.0",
     "mongoose": "^9.3.1",
     "nodemon": "^3.1.14",
-    "undici": "^5.29.0"
+    "undici": "^5.29.0",
+    "youtubei.js": "^17.2.0"
   }
 }

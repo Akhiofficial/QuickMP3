@@ -1,222 +1,111 @@
-import { exec } from "child_process";
-import util from "util";
 import fs from "fs";
 import path from "path";
-import config from "../core/config/index.js";
+import https from "https";
+import http from "http";
 
-const execPromise = util.promisify(exec);
-
+// We keep this class name to avoid breaking imports in other files
 class YtDlpService {
   constructor() {
-    this.cookiesPath = path.join(process.cwd(), "youtube-cookies.txt");
-    this.userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+    this.rapidApiKey = process.env.RAPIDAPI_KEY || "8729facb00mshbbbc6ca3dc9d8adp17bca5jsn29d5e3187f6a";
+    this.rapidApiHost = process.env.RAPIDAPI_HOST || "youtube-mp36.p.rapidapi.com";
   }
 
   /**
-   * Internal method to ensure cookies file exists if provided in config.
-   */
-  async _prepareCookies() {
-    try {
-      const rawCookies = config.youtubeCookies;
-
-      if (rawCookies && rawCookies.trim()) {
-        // Validate it looks like a Netscape cookie file
-        const trimmed = rawCookies.trim();
-        console.log(`[yt-dlp] YOUTUBE_COOKIES env var found (${trimmed.length} chars). First line: "${trimmed.split('\n')[0]}"`);
-
-        fs.writeFileSync(this.cookiesPath, trimmed, "utf8");
-        console.log(`[yt-dlp] Cookies written to: ${this.cookiesPath}`);
-        return this.cookiesPath;
-      }
-
-      console.warn("[yt-dlp] ⚠️  YOUTUBE_COOKIES env var is NOT set or empty — bot detection likely on server IPs.");
-
-      const explicitCookiesPath = process.env.YOUTUBE_COOKIES_FILE?.trim();
-      const candidatePaths = [
-        explicitCookiesPath,
-        path.join(process.cwd(), "youtube-cookies.txt"),
-        path.join(process.cwd(), "cookies.txt"),
-        path.join(process.cwd(), "backend", "youtube-cookies.txt"),
-        path.join(process.cwd(), "backend", "cookies.txt"),
-      ].filter(Boolean);
-
-      for (const candidatePath of candidatePaths) {
-        if (candidatePath && fs.existsSync(candidatePath)) {
-          console.log(`[yt-dlp] Cookies loaded from file: ${candidatePath}`);
-          return candidatePath;
-        }
-      }
-
-      console.warn("[yt-dlp] No cookies found from any source.");
-      return null;
-    } catch (error) {
-      console.error("[yt-dlp] Error preparing cookies:", error);
-      return null;
-    }
-  }
-
-
-  /**
-   * Build base command with bypass flags.
-   * Uses PO token (Proof of Origin) when available — required for server IPs in 2025.
-   * Falls back to tv_embedded client without PO token.
-   */
-  async _getBaseCommand() {
-    const cookiesFile = await this._prepareCookies();
-    const poToken = config.youtubePOToken?.trim();
-    const visitorData = config.youtubeVisitorData?.trim();
-
-    let extractorArgs;
-    let useCookies = false;
-
-    if (poToken && visitorData) {
-      // Full auth: web client + PO token + visitor data
-      extractorArgs = `youtube:player_client=web,tv_embedded;po_token=web+${poToken};visitor_data=${visitorData}`;
-      useCookies = true;
-      console.log("[yt-dlp] Using web client with PO token + visitor data.");
-    } else if (poToken) {
-      // Partial auth: web client + PO token
-      extractorArgs = `youtube:player_client=web,tv_embedded;po_token=web+${poToken}`;
-      useCookies = true;
-      console.log("[yt-dlp] Using web client with PO token (no visitor_data).");
-    } else if (visitorData) {
-      // 🎉 MAGIC BULLET: No PO Token, but we have Visitor Data!
-      // The `android` client doesn't need a PO Token, but it DOES need Visitor Data to bypass IP bans.
-      // We must NOT use cookies here, because Web Cookies + Android Client = Instant Ban.
-      extractorArgs = `youtube:player_client=android,ios;visitor_data=${visitorData}`;
-      useCookies = false;
-      console.log("[yt-dlp] ⚠️  No PO Token, but found VISITOR_DATA. Using android client bypass (ignoring cookies).");
-    } else if (cookiesFile && fs.existsSync(cookiesFile)) {
-      // Has Cookies but NO PO Token and NO Visitor Data -> Use web client and hope cookies are enough!
-      extractorArgs = `youtube:player_client=web,tv_embedded`;
-      useCookies = true;
-      console.log("[yt-dlp] ⚠️  No PO token/Visitor Data, but Cookies found. Using web client with cookies as a bypass.");
-    } else {
-      // No PO token AND No Cookies AND No Visitor Data
-      extractorArgs = `youtube:player_client=ios,android,tv_embedded`;
-      console.warn("[yt-dlp] ⚠️  No auth data found. Using ios/android fallback clients.");
-    }
-
-    let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config `
-      + `--extractor-args "${extractorArgs}" `
-      + `--user-agent "${this.userAgent}" `
-      + `--add-headers "Accept-Language:en-US,en;q=0.9"`;
-
-    if (useCookies && cookiesFile && fs.existsSync(cookiesFile)) {
-      cmd += ` --cookies "${cookiesFile}"`;
-      console.log("[yt-dlp] Attached Web Cookies to request.");
-    } else {
-      console.warn("[yt-dlp] No cookies used for this request.");
-    }
-
-    return cmd;
-  }
-
-
-
-  /**
-   * Helper function to execute yt-dlp with IP fallback (IPv4 then IPv6)
-   */
-  async _executeWithIpFallback(baseCmd, args) {
-    try {
-      // First try default routing (usually IPv4 on servers)
-      console.log(`[yt-dlp] Executing (Default IP): ${args.replace(/https:\/\/\S+/, '[URL]')}`);
-      const { stdout } = await execPromise(`${baseCmd} ${args}`);
-      return stdout;
-    } catch (error) {
-      const stderr = error.stderr || "";
-      if (stderr.includes("Sign in to confirm you") || stderr.includes("Requested format is not available") || stderr.includes("429")) {
-        console.warn(`[yt-dlp] ⚠️ IP blocked or rate-limited. Retrying with --force-ipv6...`);
-        try {
-          const { stdout } = await execPromise(`${baseCmd} --force-ipv6 ${args}`);
-          console.log(`[yt-dlp] ✅ IPv6 fallback successful!`);
-          return stdout;
-        } catch (ipv6Error) {
-          throw ipv6Error;
-        }
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Fetches the video metadata using yt-dlp.
-   * Runs: yt-dlp --dump-json --no-playlist <url>
+   * Fetches the video metadata using youtubei.js (Bypasses Datacenter IP bans for metadata)
    * @param {string} url - YouTube video URL
-   * @returns {Promise<object>} - Parsed JSON object from yt-dlp
+   * @returns {Promise<object>} - Parsed JSON object mimicking yt-dlp format
    */
   async getVideoMetadata(url) {
     try {
-      const baseCmd = await this._getBaseCommand();
-      const stdout = await this._executeWithIpFallback(baseCmd, `--dump-json --no-playlist "${url}"`);
-      return JSON.parse(stdout);
+      // Lazy load youtubei.js
+      const { Innertube } = await import('youtubei.js');
+      const yt = await Innertube.create();
+      
+      // Extract Video ID from URL
+      const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
+      if (!videoIdMatch) throw new Error("Invalid YouTube URL");
+      const videoId = videoIdMatch[1];
+
+      const info = await yt.getBasicInfo(videoId);
+      
+      return {
+        title: info.basic_info.title,
+        thumbnail: info.basic_info.thumbnail?.[0]?.url,
+        duration: info.basic_info.duration,
+        view_count: info.basic_info.view_count,
+        uploader: info.basic_info.channel?.name || info.basic_info.author
+      };
     } catch (error) {
-      const stderr = error.stderr || "";
-      console.error("yt-dlp metadata error:", stderr || error.message);
-
-      let message = "Failed to fetch video metadata. Please ensure the URL is valid.";
-
-      // Filter out warnings to find the real error
-      const actualErrorLog = stderr.split('\n').find(line => line.startsWith('ERROR:') || !line.startsWith('WARNING:')) || stderr;
-
-      if (actualErrorLog.includes("Video unavailable")) {
-        message = "This video is unavailable or has been removed.";
-      } else if (actualErrorLog.includes("Sign in to confirm you are not a bot") || actualErrorLog.includes("Sign in to confirm you’re not a bot")) {
-        message = `YouTube Error: Sign in to confirm you're not a bot.`;
-      } else if (actualErrorLog.includes("Too Many Requests") || actualErrorLog.includes("429")) {
-        message = "YouTube rate limit exceeded. Please try again later.";
-      } else if (actualErrorLog.includes("Signature solving failed")) {
-        message = "YouTube signature error. This often happens on servers; updated cookies might be required.";
-      } else if (actualErrorLog) {
-        message = `YouTube Error: ${actualErrorLog.split('\n')[0].replace('ERROR: ', '')}`;
-      }
-
-      throw new Error(message);
+      console.error("youtubei metadata error:", error);
+      throw new Error("Failed to fetch video metadata. Please ensure the URL is valid.");
     }
   }
 
   /**
-   * Converts a YouTube video to MP3 using yt-dlp.
+   * Converts a YouTube video to MP3 using RapidAPI.
    * @param {string} url - YouTube video URL
    * @returns {Promise<{filePath: string, title: string}>} - The path and title
    */
-  async convertToMp3(url, quality = "192K") {
+  async convertToMp3(url, quality = "320") {
     try {
-      const baseCmd = await this._getBaseCommand();
-      const stdout = await this._executeWithIpFallback(
-        baseCmd, 
-        `-f "bestaudio/best" -x --audio-format mp3 --audio-quality ${quality} --print title --print after_move:filepath -o "downloads/%(id)s.%(ext)s" "${url}"`
-      );
+      const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
+      if (!videoIdMatch) throw new Error("Invalid YouTube URL");
+      const videoId = videoIdMatch[1];
 
-      const lines = stdout.trim().split('\n');
-      const title = lines[0].trim();
-      const filePath = lines[lines.length - 1].trim();
+      console.log(`[RapidAPI] Fetching download link for ${videoId}...`);
 
-      return { filePath, title };
-    } catch (error) {
-      const stderr = error.stderr || "";
-      console.error("yt-dlp conversion error:", stderr || error.message);
+      const response = await fetch(`https://${this.rapidApiHost}/dl?id=${videoId}`, {
+        method: "GET",
+        headers: {
+          "x-rapidapi-host": this.rapidApiHost,
+          "x-rapidapi-key": this.rapidApiKey
+        }
+      });
 
-      let message = "Failed to convert video. Please ensure the URL is valid.";
-
-      // Filter out warnings to find the real error
-      const actualErrorLog = stderr.split('\n').find(line => line.startsWith('ERROR:') || !line.startsWith('WARNING:')) || stderr;
-
-      if (actualErrorLog.includes("Video unavailable")) {
-        message = "This video is unavailable or has been removed.";
-      } else if (actualErrorLog.includes("Sign in to confirm you are not a bot") || actualErrorLog.includes("Sign in to confirm you’re not a bot")) {
-        message = `YouTube Error: Sign in to confirm you're not a bot.`;
-      } else if (actualErrorLog.includes("Too Many Requests") || actualErrorLog.includes("429")) {
-        message = "YouTube rate limit exceeded. Please try again later.";
-      } else if (actualErrorLog.includes("Requested format is not available") || actualErrorLog.includes("not available")) {
-        message = "This video currently does not expose a compatible audio format. Please try another video or try again later.";
-      } else if (actualErrorLog.includes("Signature solving failed")) {
-        message = "YouTube signature error. This often happens on servers; updated cookies might be required.";
-      } else if (actualErrorLog) {
-        message = `YouTube Error: ${actualErrorLog.split('\n')[0].replace('ERROR: ', '')}`;
+      const data = await response.json();
+      
+      if (data.status !== "ok" || !data.link) {
+         if (data.status === "processing") {
+             throw new Error("Video is processing on the API server. Please try again in a few seconds.");
+         }
+         throw new Error(data.msg || "API returned an invalid response.");
       }
 
-      throw new Error(message);
+      console.log(`[RapidAPI] Link acquired! Downloading MP3...`);
+
+      const title = data.title || videoId;
+      const downloadDir = path.resolve(process.cwd(), "downloads");
+      if (!fs.existsSync(downloadDir)) {
+        fs.mkdirSync(downloadDir, { recursive: true });
+      }
+      
+      const filePath = path.join(downloadDir, `${videoId}.mp3`);
+
+      // Download the MP3 file from the provided link
+      await new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(filePath);
+        const protocol = data.link.startsWith("https") ? https : http;
+        
+        protocol.get(data.link, (response) => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`Failed to download MP3. Status Code: ${response.statusCode}`));
+            return;
+          }
+          response.pipe(file);
+          file.on("finish", () => {
+            file.close(resolve);
+          });
+        }).on("error", (err) => {
+          fs.unlink(filePath, () => {});
+          reject(err);
+        });
+      });
+
+      console.log(`[RapidAPI] Download complete: ${filePath}`);
+      return { filePath, title };
+    } catch (error) {
+      console.error("RapidAPI conversion error:", error);
+      throw new Error(`YouTube Error: ${error.message}`);
     }
   }
 }
