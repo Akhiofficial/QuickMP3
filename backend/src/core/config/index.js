@@ -20,6 +20,13 @@ const config = {
         key: process.env.RAPIDAPI_KEY,
         host: process.env.RAPIDAPI_HOST || 'youtube-mp36.p.rapidapi.com',
     },
+    email: {
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.EMAIL_PORT) || 587,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 };
 
 export default config;
