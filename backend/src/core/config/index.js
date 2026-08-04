@@ -4,7 +4,7 @@ const config = {
     port: process.env.PORT || 5000,
     mongoUri: process.env.MONGO_URI,
     env: process.env.NODE_ENV || 'development',
-    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    corsOrigin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : ['http://localhost:3000'],
     jwt: {
         accessSecret: process.env.JWT_ACCESS_SECRET || 'access_secret_key',
         refreshSecret: process.env.JWT_REFRESH_SECRET || 'refresh_secret_key',
