@@ -22,20 +22,31 @@ class YtDlpService {
       if (!videoIdMatch) throw new Error("Invalid YouTube URL");
       const videoId = videoIdMatch[1];
 
-      // Fetch metadata from noembed to bypass YouTube Datacenter blocks
+      // Fetch metadata from noembed to get the author
       const noembedRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
-      const info = await noembedRes.json();
+      const noembedInfo = await noembedRes.json();
       
-      if (info.error) {
-         throw new Error(info.error);
+      // Fetch RapidAPI to get exact duration and size
+      const rapidRes = await fetch(`https://${this.rapidApiHost}/dl?id=${videoId}`, {
+        method: "GET",
+        headers: {
+          "x-rapidapi-host": this.rapidApiHost,
+          "x-rapidapi-key": this.rapidApiKey
+        }
+      });
+      const rapidData = await rapidRes.json();
+
+      if (noembedInfo.error && rapidData.status !== "ok") {
+         throw new Error("Video unavailable");
       }
 
       return {
-        title: info.title,
+        title: rapidData.title || noembedInfo.title,
         thumbnail: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
-        duration: 0, // Not provided by noembed, but doesn't crash UI
-        view_count: 0, // Not provided by noembed
-        uploader: info.author_name
+        duration: rapidData.duration ? Math.round(rapidData.duration) : 0, 
+        filesize: rapidData.filesize || 0,
+        view_count: 0, // Not provided by APIs, harmless to default
+        uploader: noembedInfo.author_name || "Unknown Artist"
       };
     } catch (error) {
       console.error("metadata error:", error);

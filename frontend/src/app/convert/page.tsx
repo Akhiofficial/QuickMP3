@@ -63,9 +63,22 @@ function ConvertContent() {
   };
 
   const getExpectedSize = () => {
-    if (bitrate === "320") return "11.4 MB";
-    if (bitrate === "256") return "8.8 MB";
-    return "4.5 MB";
+    if (!metadata) return "Unknown";
+    
+    // If we have the EXACT file size from the RapidAPI backend, use it!
+    if (metadata.filesize && metadata.filesize > 0) {
+      const sizeInMB = metadata.filesize / (1024 * 1024);
+      return `${sizeInMB.toFixed(1)} MB`;
+    }
+    
+    // Fallback: Size (MB) = (Duration (seconds) * Bitrate (kbps)) / 8192
+    const durationSeconds = metadata.duration;
+    const bitrateKbps = parseInt(bitrate, 10);
+    
+    if (!durationSeconds || isNaN(durationSeconds) || isNaN(bitrateKbps)) return "Unknown";
+    
+    const sizeInMB = (durationSeconds * bitrateKbps) / 8192;
+    return `${sizeInMB.toFixed(1)} MB`;
   };
 
   return (
@@ -260,11 +273,11 @@ function ConvertContent() {
                   </div>
                   <div className="flex justify-between items-center py-4 border-b border-white/5">
                     <span className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Signal Format</span>
-                    <span className="font-black text-white">High Definition MP3</span>
+                    <span className="font-black text-white">{bitrate === "320" ? "High Definition" : bitrate === "256" ? "Standard Quality" : "Basic Quality"} MP3</span>
                   </div>
                   <div className="flex justify-between items-center py-4">
                     <span className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Resonance</span>
-                    <span className="font-black text-white">48,000 Hz</span>
+                    <span className="font-black text-white">{bitrate} kbps / {bitrate === "320" ? "48,000" : "44,100"} Hz</span>
                   </div>
                 </div>
               </div>
