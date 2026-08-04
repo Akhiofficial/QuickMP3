@@ -115,6 +115,31 @@ class YtDlpService {
 
 
   /**
+   * Helper function to execute yt-dlp with IP fallback (IPv4 then IPv6)
+   */
+  async _executeWithIpFallback(baseCmd, args) {
+    try {
+      // First try default routing (usually IPv4 on servers)
+      console.log(`[yt-dlp] Executing (Default IP): ${args.replace(/https:\/\/\S+/, '[URL]')}`);
+      const { stdout } = await execPromise(`${baseCmd} ${args}`);
+      return stdout;
+    } catch (error) {
+      const stderr = error.stderr || "";
+      if (stderr.includes("Sign in to confirm you") || stderr.includes("Requested format is not available") || stderr.includes("429")) {
+        console.warn(`[yt-dlp] ⚠️ IP blocked or rate-limited. Retrying with --force-ipv6...`);
+        try {
+          const { stdout } = await execPromise(`${baseCmd} --force-ipv6 ${args}`);
+          console.log(`[yt-dlp] ✅ IPv6 fallback successful!`);
+          return stdout;
+        } catch (ipv6Error) {
+          throw ipv6Error;
+        }
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Fetches the video metadata using yt-dlp.
    * Runs: yt-dlp --dump-json --no-playlist <url>
    * @param {string} url - YouTube video URL
@@ -123,7 +148,7 @@ class YtDlpService {
   async getVideoMetadata(url) {
     try {
       const baseCmd = await this._getBaseCommand();
-      const { stdout } = await execPromise(`${baseCmd} --dump-json --no-playlist "${url}"`);
+      const stdout = await this._executeWithIpFallback(baseCmd, `--dump-json --no-playlist "${url}"`);
       return JSON.parse(stdout);
     } catch (error) {
       const stderr = error.stderr || "";
@@ -136,8 +161,8 @@ class YtDlpService {
 
       if (actualErrorLog.includes("Video unavailable")) {
         message = "This video is unavailable or has been removed.";
-      } else if (actualErrorLog.includes("Sign in to confirm you are not a bot")) {
-        message = "YouTube is blocking the request. Please update your YOUTUBE_COOKIES.";
+      } else if (actualErrorLog.includes("Sign in to confirm you are not a bot") || actualErrorLog.includes("Sign in to confirm you’re not a bot")) {
+        message = `YouTube Error: Sign in to confirm you're not a bot.`;
       } else if (actualErrorLog.includes("Too Many Requests") || actualErrorLog.includes("429")) {
         message = "YouTube rate limit exceeded. Please try again later.";
       } else if (actualErrorLog.includes("Signature solving failed")) {
@@ -158,8 +183,9 @@ class YtDlpService {
   async convertToMp3(url, quality = "192K") {
     try {
       const baseCmd = await this._getBaseCommand();
-      const { stdout } = await execPromise(
-        `${baseCmd} -f "bestaudio/best" -x --audio-format mp3 --audio-quality ${quality} --print title --print after_move:filepath -o "downloads/%(id)s.%(ext)s" "${url}"`
+      const stdout = await this._executeWithIpFallback(
+        baseCmd, 
+        `-f "bestaudio/best" -x --audio-format mp3 --audio-quality ${quality} --print title --print after_move:filepath -o "downloads/%(id)s.%(ext)s" "${url}"`
       );
 
       const lines = stdout.trim().split('\n');
@@ -178,8 +204,10 @@ class YtDlpService {
 
       if (actualErrorLog.includes("Video unavailable")) {
         message = "This video is unavailable or has been removed.";
-      } else if (actualErrorLog.includes("Sign in to confirm you are not a bot")) {
-        message = "YouTube is blocking the request. Please update your YOUTUBE_COOKIES.";
+      } else if (actualErrorLog.includes("Sign in to confirm you are not a bot") || actualErrorLog.includes("Sign in to confirm you’re not a bot")) {
+        message = `YouTube Error: Sign in to confirm you're not a bot.`;
+      } else if (actualErrorLog.includes("Too Many Requests") || actualErrorLog.includes("429")) {
+        message = "YouTube rate limit exceeded. Please try again later.";
       } else if (actualErrorLog.includes("Requested format is not available") || actualErrorLog.includes("not available")) {
         message = "This video currently does not expose a compatible audio format. Please try another video or try again later.";
       } else if (actualErrorLog.includes("Signature solving failed")) {
