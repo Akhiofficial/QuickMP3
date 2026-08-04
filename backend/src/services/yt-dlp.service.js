@@ -70,18 +70,24 @@ class YtDlpService {
     let useCookies = false;
 
     if (poToken && visitorData) {
-      // Full auth: web client + PO token + visitor data (most reliable on server IPs)
+      // Full auth: web client + PO token + visitor data
       extractorArgs = `youtube:player_client=web,tv_embedded;po_token=web+${poToken};visitor_data=${visitorData}`;
       useCookies = true;
       console.log("[yt-dlp] Using web client with PO token + visitor data.");
     } else if (poToken) {
+      // Partial auth: web client + PO token
       extractorArgs = `youtube:player_client=web,tv_embedded;po_token=web+${poToken}`;
       useCookies = true;
       console.log("[yt-dlp] Using web client with PO token (no visitor_data).");
+    } else if (cookiesFile && fs.existsSync(cookiesFile)) {
+      // Has Cookies but NO PO Token -> Use web client and hope cookies are enough!
+      extractorArgs = `youtube:player_client=web,tv_embedded`;
+      useCookies = true;
+      console.log("[yt-dlp] ⚠️  No PO token, but Cookies found. Using web client with cookies as a bypass.");
     } else {
-      // No PO token — fall back to ios,tv_embedded,android which needs no PO token
+      // No PO token AND No Cookies — fall back to ios/android
       extractorArgs = `youtube:player_client=ios,android,tv_embedded`;
-      console.warn("[yt-dlp] ⚠️  No PO token found. Using ios/android fallback clients.");
+      console.warn("[yt-dlp] ⚠️  No PO token AND No Cookies found. Using ios/android fallback clients.");
     }
 
     let cmd = `yt-dlp --no-check-certificate --no-warnings --ignore-config `
@@ -92,10 +98,8 @@ class YtDlpService {
     if (useCookies && cookiesFile && fs.existsSync(cookiesFile)) {
       cmd += ` --cookies "${cookiesFile}"`;
       console.log("[yt-dlp] Attached Web Cookies to request.");
-    } else if (!useCookies && cookiesFile) {
-      console.warn("[yt-dlp] ⚠️  Ignored Web Cookies because they trigger bot detection when used with non-web clients (iOS/Android) on Datacenter IPs.");
     } else {
-      console.warn("[yt-dlp] No cookies — relying on client bypass only.");
+      console.warn("[yt-dlp] No cookies used for this request.");
     }
 
     return cmd;
