@@ -17,27 +17,28 @@ class YtDlpService {
    */
   async getVideoMetadata(url) {
     try {
-      // Lazy load youtubei.js
-      const { Innertube } = await import('youtubei.js');
-      const yt = await Innertube.create();
-      
-      // Extract Video ID from URL (handle URI encoded strings)
       const decodedUrl = decodeURIComponent(url);
       const videoIdMatch = decodedUrl.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
       if (!videoIdMatch) throw new Error("Invalid YouTube URL");
       const videoId = videoIdMatch[1];
 
-      const info = await yt.getBasicInfo(videoId);
+      // Fetch metadata from noembed to bypass YouTube Datacenter blocks
+      const noembedRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+      const info = await noembedRes.json();
       
+      if (info.error) {
+         throw new Error(info.error);
+      }
+
       return {
-        title: info.basic_info.title,
-        thumbnail: info.basic_info.thumbnail?.[0]?.url,
-        duration: info.basic_info.duration,
-        view_count: info.basic_info.view_count,
-        uploader: info.basic_info.channel?.name || info.basic_info.author
+        title: info.title,
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
+        duration: 0, // Not provided by noembed, but doesn't crash UI
+        view_count: 0, // Not provided by noembed
+        uploader: info.author_name
       };
     } catch (error) {
-      console.error("youtubei metadata error:", error);
+      console.error("metadata error:", error);
       throw new Error("Failed to fetch video metadata. Please ensure the URL is valid.");
     }
   }
