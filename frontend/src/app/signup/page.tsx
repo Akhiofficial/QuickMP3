@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { registerUser } from "../../features/conversion/api/conversionApi";
+import toast from "react-hot-toast";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -19,10 +21,12 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      await registerUser(email, password);
+      await registerUser(email, password, name);
+      toast.success("Identity created! Return to login.");
       router.push("/login?signup=success");
     } catch (err: any) {
       setError(err.message || "Registration failed");
+      toast.error(err.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
@@ -95,6 +99,24 @@ export default function SignupPage() {
 
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-6">
+                {/* Name */}
+                <div className="space-y-2">
+                  <label className="block text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500 ml-1" htmlFor="name">Agent Name</label>
+                  <div className="relative group/input">
+                    <input
+                      className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white placeholder:text-zinc-700 focus:border-primary-dim/40 transition-all outline-none focus:bg-white/10"
+                      id="name"
+                      placeholder="Alex Mercer"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                    <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-zinc-600 group-focus-within/input:text-primary-dim transition-colors">
+                      <span className="material-symbols-outlined text-[20px]">person</span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Email */}
                 <div className="space-y-2">
                   <label className="block text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500 ml-1" htmlFor="email">Digital Identifier (Email)</label>

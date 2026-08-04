@@ -5,9 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { loginUser } from "../../features/conversion/api/conversionApi";
+import { useAuth } from "../../contexts/AuthContext";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -19,10 +22,13 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await loginUser(email, password);
-      router.push("/");
+      const data = await loginUser(email, password);
+      login(data.accessToken, data.refreshToken, data.user);
+      toast.success("Welcome back!");
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Invalid credentials");
+      toast.error(err.message || "Invalid credentials");
     } finally {
       setIsLoading(false);
     }
