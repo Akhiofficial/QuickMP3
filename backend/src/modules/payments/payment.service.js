@@ -66,7 +66,7 @@ export const createOrder = async (userId, planKey) => {
   const order = await razorpay.orders.create({
     amount: plan.amount,
     currency: plan.currency,
-    receipt: `qmp3_${userId}_${Date.now()}`,
+    receipt: `rcpt_${userId.toString().slice(-8)}_${Date.now().toString().slice(-8)}`,
     notes: {
       userId: userId.toString(),
       plan: planKey,

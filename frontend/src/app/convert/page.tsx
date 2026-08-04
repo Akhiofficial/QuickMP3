@@ -12,6 +12,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { PremiumModal } from "../../components/ui/PremiumModal";
 import toast from "react-hot-toast";
+import { UrlInput } from "../../features/conversion/components/UrlInput";
 
 function ConvertContent() {
   const searchParams = useSearchParams();
@@ -137,6 +138,24 @@ function ConvertContent() {
       <Navbar />
 
       <main className="pt-40 pb-24 px-6 min-h-screen flex flex-col items-center justify-center relative z-10">
+        {!metadata && status === "idle" && !error && (
+          <div className="w-full max-w-3xl space-y-8 text-center">
+            <div className="space-y-4">
+              <span className="inline-flex items-center gap-2 py-1.5 px-4 mb-2 rounded-full bg-primary-dim/10 border border-primary-dim/20 text-primary-dim text-[10px] font-black uppercase tracking-[0.2em]">
+                <span className="material-symbols-outlined text-[14px]">bolt</span>
+                Extraction Chamber
+              </span>
+              <h2 className="text-3xl md:text-5xl font-headline font-black text-white italic tracking-tight">
+                Enter Transmutation Link
+              </h2>
+              <p className="text-zinc-400 font-medium max-w-lg mx-auto">
+                Paste any YouTube video or playlist link below to initialize parameters and analyze audio signal dynamics.
+              </p>
+            </div>
+            <UrlInput />
+          </div>
+        )}
+
         {!metadata && status === "loading_metadata" && (
           <div className="flex flex-col items-center gap-6">
             <div className="relative">

@@ -45,6 +45,7 @@ const transactionSchema = new mongoose.Schema(
     invoiceNumber: {
       type: String,
       unique: true,
+      sparse: true,
       default: null,
     },
   },
@@ -54,12 +55,11 @@ const transactionSchema = new mongoose.Schema(
 );
 
 // Auto-generate invoice number before save
-transactionSchema.pre("save", function (next) {
+transactionSchema.pre("save", async function () {
   if (!this.invoiceNumber && this.status === "paid") {
     const timestamp = Date.now().toString().slice(-8);
     this.invoiceNumber = `QMP3-${timestamp}`;
   }
-  next();
 });
 
 const Transaction = mongoose.model("Transaction", transactionSchema);

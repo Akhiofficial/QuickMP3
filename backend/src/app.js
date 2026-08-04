@@ -15,14 +15,14 @@ import { globalLimiter } from "./core/middlewares/rateLimit.middleware.js";
 const app = express();
 
 // middlewares 
-app.use(globalLimiter);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 app.use(cors({
   origin: config.corsOrigin,
   credentials: true, // Allow cookies to be sent
 }));
+app.use(globalLimiter);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Routes
 app.use("/api/auth", authRoutes);
