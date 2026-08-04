@@ -262,6 +262,137 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="py-32 max-w-7xl mx-auto px-6 md:px-12 relative">
+        <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-white/10 to-transparent"></div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-20"
+        >
+          <h2 className="text-4xl md:text-5xl font-headline font-black mb-6">Pricing Plans</h2>
+          <p className="text-zinc-400 max-w-2xl mx-auto text-lg font-medium">Choose the processing speed and download quota that fits your requirements.</p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          {/* Free Card */}
+          <div className="glass-panel p-8 rounded-[2rem] border border-white/5 bg-white/5 flex flex-col justify-between h-full">
+            <div>
+              <h3 className="text-lg font-bold text-zinc-400 uppercase tracking-widest text-[11px] mb-2">Free</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-black text-white">₹0</span>
+              </div>
+              <ul className="space-y-4 mb-8 text-sm text-zinc-400 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                  Login Required
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                  3 Lifetime Downloads
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                  Standard Speed
+                </li>
+              </ul>
+            </div>
+            <Link href="/login" className="w-full py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest text-center border border-white/10 transition-all block">
+              Get Started
+            </Link>
+          </div>
+
+          {/* Starter Card */}
+          <div className="glass-panel p-8 rounded-[2rem] border border-white/5 bg-white/5 flex flex-col justify-between h-full">
+            <div>
+              <h3 className="text-lg font-bold text-zinc-400 uppercase tracking-widest text-[11px] mb-2">Starter</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-black text-white">₹19</span>
+                <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">/ 30 Days</span>
+              </div>
+              <ul className="space-y-4 mb-8 text-sm text-zinc-400 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                  20 Downloads
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                  Valid 30 Days
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                  320 kbps Quality
+                </li>
+              </ul>
+            </div>
+            <Link href="/pricing" className="w-full py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest text-center border border-white/10 transition-all block">
+              Choose Starter
+            </Link>
+          </div>
+
+          {/* Pro Monthly Card */}
+          <div className="glass-panel p-8 rounded-[2rem] border border-primary-dim bg-primary-dim/5 flex flex-col justify-between h-full relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 py-0.5 px-3 rounded-full bg-primary-dim text-white text-[8px] font-black uppercase tracking-widest">
+              Most Popular ⭐
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-primary-fixed uppercase tracking-widest text-[11px] mb-2 mt-2">Pro Monthly</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-black text-white">₹99</span>
+                <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">/ month</span>
+              </div>
+              <ul className="space-y-4 mb-8 text-sm text-zinc-300 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-sm">check_circle</span>
+                  Unlimited Downloads*
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-sm">check_circle</span>
+                  Highest Audio Quality
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-sm">check_circle</span>
+                  Fast Queue Priority
+                </li>
+              </ul>
+            </div>
+            <Link href="/pricing" className="w-full py-3.5 rounded-xl bg-linear-to-r from-primary-dim to-secondary text-white font-bold text-xs uppercase tracking-widest text-center transition-all block shadow-[0_0_20px_rgba(132,85,239,0.3)]">
+              Choose Pro Monthly
+            </Link>
+          </div>
+
+          {/* Pro Yearly Card */}
+          <div className="glass-panel p-8 rounded-[2rem] border border-white/5 bg-white/5 flex flex-col justify-between h-full">
+            <div>
+              <h3 className="text-lg font-bold text-zinc-400 uppercase tracking-widest text-[11px] mb-2">Pro Yearly</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-black text-white">₹799</span>
+                <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">/ year</span>
+              </div>
+              <ul className="space-y-4 mb-8 text-sm text-zinc-400 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                  Everything in Monthly
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                  Save over 30%
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-green-400 text-sm">check_circle</span>
+                  Priority Support
+                </li>
+              </ul>
+            </div>
+            <Link href="/pricing" className="w-full py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest text-center border border-white/10 transition-all block">
+              Choose Pro Yearly
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section id="faq" className="py-32 max-w-4xl mx-auto px-6">
         <motion.div
