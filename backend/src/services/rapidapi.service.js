@@ -8,8 +8,8 @@ const RAPIDAPI_HOST = config.rapidapi.host;
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Extracts the YouTube video ID from any common URL format.
  * Handles: youtu.be/ID, youtube.com/watch?v=ID, /shorts/ID, /embed/ID
+ * Extracts the YouTube video ID from any common URL format.
  * @param {string} url
  * @returns {string|null} videoId
  */

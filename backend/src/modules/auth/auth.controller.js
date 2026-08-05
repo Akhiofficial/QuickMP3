@@ -1,4 +1,5 @@
 import authService from "./auth.service.js";
+import config from "../../core/config/index.js";
 
 /**
  * Handle user registration
@@ -130,6 +131,98 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle Google login
+ */
+const googleLogin = async (req, res, next) => {
+  try {
+    const { code, redirectUri } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ success: false, message: "Authorization code is required" });
+    }
+
+    const clientId = config.google.clientId;
+    const clientSecret = config.google.clientSecret;
+
+    if (!clientId || !clientSecret) {
+      return res.status(500).json({
+        success: false,
+        message: "Google OAuth credentials are not configured on the server",
+      });
+    }
+
+    // 1. Exchange authorization code for tokens with Google
+    const tokenUrl = "https://oauth2.googleapis.com/token";
+    const tokenParams = {
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    };
+
+    const tokenResponse = await fetch(tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(tokenParams).toString(),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json();
+      console.error("Google token exchange error:", errorData);
+      return res.status(400).json({ success: false, message: "Failed to exchange Google authorization code" });
+    }
+
+    const tokenData = await tokenResponse.json();
+    const { access_token } = tokenData;
+
+    // 2. Fetch user profile from Google using the access token
+    const profileUrl = "https://www.googleapis.com/oauth2/v3/userinfo";
+    const profileResponse = await fetch(profileUrl, {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+
+    if (!profileResponse.ok) {
+      return res.status(400).json({ success: false, message: "Failed to fetch Google user profile" });
+    }
+
+    const profile = await profileResponse.json();
+    const { sub: googleId, email, name, picture: avatar } = profile;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Google account does not provide an email address" });
+    }
+
+    // 3. Process the login / registration in service
+    const { accessToken, refreshToken, user } = await authService.loginWithGoogle({
+      googleId,
+      email,
+      name,
+      avatar,
+    });
+
+    // Set HTTP-only cookies
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 30 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({ success: true, message: "Google login successful", accessToken, refreshToken, user });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   register,
   login,
@@ -137,4 +230,5 @@ export default {
   logout,
   forgotPassword,
   resetPassword,
+  googleLogin,
 };

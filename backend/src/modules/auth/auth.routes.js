@@ -46,6 +46,13 @@ router.post("/forgot-password", authController.forgotPassword);
  */
 router.post("/reset-password", authController.resetPassword);
 
+/**
+ * @route  POST /api/auth/google
+ * @desc   Authenticate with Google Authorization Code
+ * @access Public
+ */
+router.post("/google", authController.googleLogin);
+
 // Legacy route (keep for backwards compat)
 router.get("/get-me", authMiddleware, authController.getMe);
 

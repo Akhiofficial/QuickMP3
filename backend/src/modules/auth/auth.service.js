@@ -200,6 +200,60 @@ const resetPassword = async (token, newPassword) => {
   await user.save();
 };
 
+/**
+ * Handle Google Login / Registration
+ * @param {Object} payload - { googleId, email, name, avatar }
+ * @returns {Promise<Object>} tokens + user
+ */
+const loginWithGoogle = async ({ googleId, email, name, avatar }) => {
+  let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+  if (user) {
+    // If user exists but didn't have googleId linked yet (e.g. registered with password)
+    if (!user.googleId) {
+      user.googleId = googleId;
+      if (avatar && !user.avatar) {
+        user.avatar = avatar;
+      }
+      await user.save();
+    }
+  } else {
+    // Register new Google user
+    user = new User({
+      googleId,
+      email,
+      name,
+      avatar,
+      isEmailVerified: true,
+      plan: "free",
+      downloadsRemaining: 3,
+      downloadsUsed: 0,
+    });
+    await user.save();
+  }
+
+  const accessToken = tokenService.generateAccessToken(user._id);
+  const refreshToken = tokenService.generateRefreshToken(user._id);
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  const safeUser = {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    role: user.role,
+    plan: user.plan,
+    downloadsRemaining: user.downloadsRemaining,
+    downloadsUsed: user.downloadsUsed,
+    subscriptionStatus: user.subscriptionStatus,
+    subscriptionEnd: user.subscriptionEnd,
+  };
+
+  return { accessToken, refreshToken, user: safeUser };
+};
+
 export default {
   registerUser,
   loginUser,
@@ -208,4 +262,5 @@ export default {
   logoutUser,
   forgotPassword,
   resetPassword,
+  loginWithGoogle,
 };

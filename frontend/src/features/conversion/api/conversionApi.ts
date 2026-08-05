@@ -37,6 +37,24 @@ export const registerUser = async (email: string, password: string, name?: strin
   return data;
 };
 
+export const loginWithGoogleApi = async (code: string, redirectUri: string) => {
+  const response = await fetch(`${BASE_URL}/auth/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, redirectUri }),
+  });
+  
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || "Google authentication failed");
+  
+  if (data.accessToken) {
+    localStorage.setItem("accessToken", data.accessToken);
+    localStorage.setItem("refreshToken", data.refreshToken);
+  }
+  
+  return data;
+};
+
 export const forgotPassword = async (email: string) => {
   const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
     method: "POST",

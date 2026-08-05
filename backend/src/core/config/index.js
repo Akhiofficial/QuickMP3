@@ -30,6 +30,10 @@ const config = {
         keyId: process.env.RAZORPAY_KEY_ID,
         keySecret: process.env.RAZORPAY_KEY_SECRET,
     },
+    google: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    },
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 };
 
