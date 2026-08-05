@@ -56,29 +56,86 @@ export const getVideoMetadata = async (url) => {
     throw new Error('Invalid YouTube URL. Could not extract video ID.');
   }
 
+  let title = '';
+  let author = 'Unknown Artist';
+  const thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+  
+  // 1. Fetch from oEmbed (highly reliable for basic details)
   try {
-    // YouTube oEmbed: free, no API key, returns title + author_name + thumbnail_url
     const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
     const response = await fetch(oembedUrl);
-
-    if (!response.ok) {
-      throw new Error('Video not found or is private/unavailable.');
+    if (response.ok) {
+      const data = await response.json();
+      title = data.title || '';
+      author = data.author_name || 'Unknown Artist';
     }
+  } catch (err) {
+    console.error('oEmbed metadata fetch failed:', err.message);
+  }
 
-    const data = await response.json();
+  // 2. Fetch watch page HTML to extract duration & view count
+  let duration = null;
+  let viewCount = null;
 
-    return {
-      title: data.title,
-      // oEmbed gives a low-res thumbnail; use maxresdefault for HD
-      thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-      duration: null,       // oEmbed doesn't return duration (shown as null, UI handles it)
-      author: data.author_name,
-      viewCount: null,      // oEmbed doesn't return views
-    };
-  } catch (error) {
-    console.error('Metadata fetch error:', error.message);
+  try {
+    const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const response = await fetch(watchUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9"
+      }
+    });
+
+    if (response.ok) {
+      const html = await response.text();
+
+      // Extract duration (lengthSeconds)
+      const lengthMatch = html.match(/"lengthSeconds":"(\d+)"/);
+      if (lengthMatch) {
+        const secs = parseInt(lengthMatch[1]);
+        if (!isNaN(secs)) {
+          const h = Math.floor(secs / 3600);
+          const m = Math.floor((secs % 3600) / 60);
+          const s = secs % 60;
+          if (h > 0) {
+            duration = `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+          } else {
+            duration = `${m}:${s.toString().padStart(2, '0')}`;
+          }
+        }
+      }
+
+      // Extract viewCount
+      const viewMatch = html.match(/"viewCount":"(\d+)"/);
+      if (viewMatch) {
+        const rawViews = parseInt(viewMatch[1]);
+        if (!isNaN(rawViews)) {
+          viewCount = rawViews.toLocaleString('en-US');
+        }
+      }
+
+      // Fallback for title if oEmbed failed
+      if (!title) {
+        const titleMatch = html.match(/"title":"([^"]+)"/);
+        if (titleMatch) title = titleMatch[1];
+      }
+    }
+  } catch (err) {
+    console.warn('HTML scrape metadata failed (likely rate-limited):', err.message);
+  }
+
+  // If both failed to get title, throw
+  if (!title) {
     throw new Error('Failed to fetch video metadata. Please check the URL and try again.');
   }
+
+  return {
+    title,
+    thumbnail,
+    duration,
+    author,
+    viewCount,
+  };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
